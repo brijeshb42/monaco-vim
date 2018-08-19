@@ -1,0 +1,38 @@
+{
+  "name": "monaco-vim",
+  "version": "0.0.1",
+  "description": "Vim keybindings for monaco-editor",
+  "main": "./lib/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "webpack-dev-server --mode development --host=0.0.0.0 --port=8080",
+    "clean": "rm -rf lib dist local",
+    "dist": "webpack --mode production",
+    "babel": "NODE_ENV=production babel ./src -d lib --ignore 'demo.js'",
+    "build": "npm run clean && npm run babel && npm run dist",
+    "local": "mkdir -p local && cp -r lib dist package.json local",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "monaco-editor",
+    "vim"
+  ],
+  "author": "Brijesh Bittu <brijesh@bitwiser.in>",
+  "license": "MIT",
+  "devDependencies": {
+    "babel-core": "^6.26.3",
+    "babel-loader": "^7.1.5",
+    "babel-plugin-transform-class-properties": "^6.24.1",
+    "babel-preset-env": "^1.7.0",
+    "css-loader": "^1.0.0",
+    "html-webpack-plugin": "^3.2.0",
+    "monaco-editor-webpack-plugin": "^1.5.1",
+    "style-loader": "^0.22.1",
+    "webpack": "^4.16.5",
+    "webpack-cli": "^3.1.0",
+    "webpack-dev-server": "^3.1.5"
+  },
+  "dependencies": {
+    "monaco-editor": "^0.14.0"
+  }
+}
