@@ -2,6 +2,8 @@
 
 Vim keybindings for monaco-editor [demo](https://editor-a5ea1.firebaseapp.com)
 
+[![npm version](https://badge.fury.io/js/monaco-vim.svg)](https://www.npmjs.com/package/monaco-vim)
+
 ### Install
 
 #### Webpack/browserify
