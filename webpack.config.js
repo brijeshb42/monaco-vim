@@ -14,6 +14,7 @@ function getOutput(isProd = false) {
 
   data.libraryTarget = 'umd';
   data.library = 'MonacoVim';
+  data.globalObject = 'self';
   return data;
 }
 
