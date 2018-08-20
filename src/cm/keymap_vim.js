@@ -2302,6 +2302,9 @@ var Vim = function() {
         }
       }
       cm.setOption('disableInput', false);
+      if (vim.visualMode) {
+        exitVisualMode(cm);
+      }
       if (actionArgs && actionArgs.replace) {
         // Handle Replace-mode as a special case of insert mode.
         cm.toggleOverwrite(true);
@@ -2316,9 +2319,6 @@ var Vim = function() {
         // Only record if not replaying.
         cm.on('change', onChange);
         CodeMirror.on(cm.getInputField(), 'keydown', onKeyEventTargetKeyDown);
-      }
-      if (vim.visualMode) {
-        exitVisualMode(cm);
       }
       selectForInsert(cm, head, height);
     },

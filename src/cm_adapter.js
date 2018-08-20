@@ -674,10 +674,6 @@ class CMAdapter {
     const { editor } = this;
 
     editor.getSelections().forEach((sel, index) => {
-      if (!texts[index]) {
-        return;
-      }
-
       editor.executeEdits('vim', [{
         range: sel,
         text: texts[index],
