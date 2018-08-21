@@ -581,6 +581,8 @@ class CMAdapter {
       text,
       range: Range.fromPositions(p1, p2),
     }]);
+    // @TODO - Check if this breaks any other expectation
+    this.pushUndoStop();
   }
 
   pushUndoStop() {
