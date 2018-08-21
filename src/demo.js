@@ -10,7 +10,7 @@ const editor = monaco.editor.create(editorNode, {
     enabled: false,
   },
   theme: 'vs',
-  language: 'typescript',
+  language: 'javascript',
   fontSize: 15,
   scrollBeyondLastLine: false,
 });

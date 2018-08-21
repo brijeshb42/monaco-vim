@@ -18,7 +18,6 @@ const { userAgent, platform } = window.navigator;
 const edge = /Edge\/(\d+)/.exec(userAgent);
 const ios = !edge && /AppleWebKit/.test(userAgent) && /Mobile\/\w+/.test(userAgent);
 const mac = ios || /Mac/.test(platform);
-const flipCtrlCmd = mac;
 
 const nonASCIISingleCaseWordChar = /[\u00df\u0587\u0590-\u05f4\u0600-\u06ff\u3040-\u309f\u30a0-\u30ff\u3400-\u4db5\u4e00-\u9fcc\uac00-\ud7af]/;
 
@@ -149,7 +148,7 @@ class Marker {
   }
 }
 
-function monacoToVimKey(e, skip = false) {
+function monacoToCmKey(e, skip = false) {
   let addQuotes = true;
   let keyName = monaco.KeyCode[e.keyCode];
 
@@ -178,6 +177,8 @@ function monacoToVimKey(e, skip = false) {
   } else if (keyName.endsWith('Arrow')) {
     skipOnlyShiftCheck = true;
     key = keyName.substr(0, keyName.length - 5);
+  } else if (keyName.startsWith('US_')) {
+    key = e.browserEvent.key;
   }
 
   if (!skipOnlyShiftCheck && !e.altKey && !e.ctrlKey && !e.metaKey) {
@@ -220,7 +221,7 @@ class CMAdapter {
     }
   };
   static isWordChar = isWordCharBasic;
-  static keyName = monacoToVimKey;
+  static keyName = monacoToCmKey;
   static StringStream = StringStream;
   static e_stop = function(e) {
     if (e.stopPropagation) {
@@ -320,6 +321,7 @@ class CMAdapter {
       KeyMod.CtrlCmd | KeyCode.KEY_A,
       KeyMod.CtrlCmd | KeyCode.KEY_D,
       KeyMod.CtrlCmd | KeyCode.KEY_P,
+      KeyMod.CtrlCmd | KeyCode.KEY_O,
     ].forEach(key => {
       this.commandList.push(this.editor.addCommand(key, () => {}, '!insertMode'));
     });
@@ -330,15 +332,17 @@ class CMAdapter {
       return;
     }
 
-    const key = monacoToVimKey(e);
+    const key = monacoToCmKey(e);
 
     if (this.replaceMode) {
       this.handleReplaceMode(key, e);
-    } else if (this.state.vim && !this.state.vim.insertMode) {
-      if (!this.ignoredKeys.some(key => e.equals(key))) {
-        e.preventDefault();
-      }
     }
+    // else if (this.state.vim) { // && !this.state.vim.insertMode) {
+      // if (!this.ignoredKeys.some(key => e.equals(key))) {
+      // e.preventDefault();
+      // e.stopPropagation();
+      // }
+    //}
 
     if (!key) {
       return;
@@ -347,6 +351,8 @@ class CMAdapter {
     if (CMAdapter.keyMap.vim && CMAdapter.keyMap.vim.call) {
       const cmd = CMAdapter.keyMap.vim.call(key, this);
       if (cmd) {
+        e.preventDefault();
+        e.stopPropagation();
         cmd();
       }
     }
@@ -378,6 +384,7 @@ class CMAdapter {
     }
 
     e.preventDefault();
+    e.stopPropagation();
 
     if (!this.replaceStack) {
       this.replaceStack = [];
@@ -505,6 +512,9 @@ class CMAdapter {
   }
 
   getLine(line) {
+    if (line < 0) {
+      return '';
+    }
     const { model } = this.editor;
     const maxLines = model.getLineCount();
 
@@ -1039,9 +1049,35 @@ class CMAdapter {
       return;
     }
     const pos = this.editor.getPosition();
-    pos.column -= units;
+    this.editor.setPosition(new Position(pos.lineNumber, pos.column + units));
+  }
 
-    this.editor.setPosition(pos);
+  scanForBracket(pos, dir) {
+    const range = this.editor.getModel().matchBracket(toMonacoPos(pos));
+
+    if (!range || range.length !== 2) {
+      return null;
+    }
+
+    if (dir === -1) {
+      return {
+        pos: toCmPos(range[1].getEndPosition()),
+      };
+    } else if (dir === 1) {
+      return {
+        pos: toCmPos(range[0].getStartPosition()),
+      };
+    }
+
+    return null;
+  }
+
+  indexFromPos(pos) {
+    return this.editor.getModel().getOffsetAt(toMonacoPos(pos));
+  }
+
+  posFromIndex(offset) {
+    return toCmPos(this.editor.getModel().getPositionAt(offset));
   }
 }
 

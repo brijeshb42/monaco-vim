@@ -17,7 +17,7 @@
     "monaco-editor",
     "vim"
   ],
-  "author": "Brijesh Bittu <brijesh@bitwiser.in>",
+  "author": "Brijesh Bittu <brijesh@bitwiser.in> (http://bitwiser.in/)",
   "license": "MIT",
   "devDependencies": {
     "babel-core": "^6.26.3",

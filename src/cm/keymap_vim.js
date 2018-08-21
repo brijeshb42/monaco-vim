@@ -1168,11 +1168,11 @@ var Vim = function() {
           break;
         case 'operator':
           this.processOperator(cm, vim, command);
-          cm.pushUndoStop();
+          // cm.pushUndoStop();
           break;
         case 'operatorMotion':
           this.processOperatorMotion(cm, vim, command);
-          cm.pushUndoStop();
+          // cm.pushUndoStop();
           break;
         case 'action':
           this.processAction(cm, vim, command);
