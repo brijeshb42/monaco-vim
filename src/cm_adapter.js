@@ -1054,24 +1054,42 @@ class CMAdapter {
     this.editor.setPosition(new Position(pos.lineNumber, pos.column + units));
   }
 
-  scanForBracket(pos, dir) {
-    const range = this.editor.getModel().matchBracket(toMonacoPos(pos));
+  /**
+   * Uses internal apis which not sure why is internal
+   */
+  scanForBracket(pos, dir, dd, config) {
+    const mPos = toMonacoPos(pos);
+    const model = this.editor.getModel();
+    let range = model.matchBracket(mPos);
+
+    if (!range || range.length !== 2) {
+      const bracket = '{([';
+      for(let i=0; i<bracket.length; i++) {
+        const bracketRange = model.findMatchingBracketUp(bracket[i], mPos);
+
+        if (bracketRange) {
+          range = model.matchBracket(bracketRange.getEndPosition());
+          break;
+        }
+      }
+    }
 
     if (!range || range.length !== 2) {
       return null;
     }
 
+    let res;
+
     if (dir === -1) {
-      return {
-        pos: toCmPos(range[1].getEndPosition()),
-      };
-    } else if (dir === 1) {
-      return {
-        pos: toCmPos(range[0].getStartPosition()),
-      };
+      res = range[1].getStartPosition();
+    } else {
+      res = range[0].getStartPosition();
     }
 
-    return null;
+    return {
+      pos: toCmPos(res),
+      ch: model.getValueInRange(dir === -1 ? range[0] : range[1]),
+    };
   }
 
   indexFromPos(pos) {
