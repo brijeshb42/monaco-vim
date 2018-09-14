@@ -15,8 +15,13 @@ export default class VimStatusBar {
     this.editor = editor;
   }
 
-  setMode(e) {
-    this.setText(`--${e.mode.toUpperCase()}--`);
+  setMode(ev) {
+    if (ev.mode === 'visual' && ev.subMode === 'linewise') {
+      this.setText('--VISUAL LINE--');
+      return;
+    }
+
+    this.setText(`--${ev.mode.toUpperCase()}--`);
   }
 
   setKeyBuffer(key) {
