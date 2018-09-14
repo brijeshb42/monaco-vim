@@ -283,7 +283,7 @@ class CMAdapter {
     CMAdapter.prototype[name] = fn;
   };
 
-  constructor(editor, { ignoredKeys = [] } = {}) {
+  constructor(editor) {
     this.editor = editor;
     this.state = {};
     this.marks = {};
@@ -296,7 +296,6 @@ class CMAdapter {
     this.ctxInsert = this.editor.createContextKey('insertMode', true);
     this.commandList = []
     this.addCommands();
-    this.ignoredKeys = ignoredKeys;
   }
 
   attach() {
@@ -337,12 +336,6 @@ class CMAdapter {
     if (this.replaceMode) {
       this.handleReplaceMode(key, e);
     }
-    // else if (this.state.vim) { // && !this.state.vim.insertMode) {
-      // if (!this.ignoredKeys.some(key => e.equals(key))) {
-      // e.preventDefault();
-      // e.stopPropagation();
-      // }
-    //}
 
     if (!key) {
       return;
