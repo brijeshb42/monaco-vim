@@ -294,8 +294,6 @@ class CMAdapter {
     this.attached = false;
     this.addLocalListeners();
     this.ctxInsert = this.editor.createContextKey('insertMode', true);
-    this.commandList = []
-    this.addCommands();
   }
 
   attach() {
@@ -308,22 +306,6 @@ class CMAdapter {
       this.editor.onDidChangeModelContent(this.handleChange),
       this.editor.onKeyDown(this.handleKeyDown),
     );
-  }
-
-  addCommands() {
-    [
-      KeyCode.Backspace,
-      KeyCode.Delete,
-      KeyMod.WinCtrl | KeyCode.KEY_D,
-      KeyMod.WinCtrl | KeyCode.KEY_U,
-      KeyMod.WinCtrl | KeyCode.KEY_N,
-      KeyMod.CtrlCmd | KeyCode.KEY_A,
-      KeyMod.CtrlCmd | KeyCode.KEY_D,
-      KeyMod.CtrlCmd | KeyCode.KEY_P,
-      KeyMod.CtrlCmd | KeyCode.KEY_O,
-    ].forEach(key => {
-      this.commandList.push(this.editor.addCommand(key, () => {}, '!insertMode'));
-    });
   }
 
   handleKeyDown = (e) => {
@@ -747,32 +729,10 @@ class CMAdapter {
   dispose() {
     this.dispatch('dispose');
     this.removeOverlay();
+
     if (CMAdapter.keyMap.vim) {
       CMAdapter.keyMap.vim.detach(this);
     }
-
-    const { editor } = this;
-
-    this.commandList.forEach(commandId => {
-      const { _commandService } = editor;
-      const { _dynamicKeybindings } = editor._standaloneKeybindingService;
-      const item = _dynamicKeybindings.find(binding => {
-        return binding.command === commandId;
-      });
-
-      if (!item) {
-        return;
-      }
-
-      const index = _dynamicKeybindings.indexOf(item);
-
-      if (index < 0) {
-        return;
-      }
-
-      _dynamicKeybindings.splice(index, 1);
-      delete _commandService._dynamicCommands[commandId];
-    })
 
     this.disposables.forEach(d => d.dispose());
   }
