@@ -422,7 +422,6 @@ class CMAdapter {
     }
 
     this.dispatch('change', this, change);
-    this.dispatch('cursorActivity', this, e);
   };
 
   setOption(key, value) {

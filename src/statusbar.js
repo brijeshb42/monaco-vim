@@ -57,6 +57,8 @@ export default class VimStatusBar {
 
       this.addInputListeners();
     }
+
+    return this.closeInput;
   }
 
   setText(text) {
