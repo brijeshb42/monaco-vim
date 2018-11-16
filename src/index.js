@@ -37,7 +37,7 @@ export function initVimMode(editor, statusbarNode = null, StatusBarClass = Statu
   });
 
   VimMode.defineExtension('openDialog', function(html, callback, options) {
-    statusbar.setSec(html, callback, options);
+    return statusbar.setSec(html, callback, options);
   });
 
   VimMode.defineExtension('openNotification', function(html) {
