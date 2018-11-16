@@ -31,6 +31,14 @@ var initVimMode = window.MonacoVim.initVimMode;
 var vimMode = initVimMode(editor, document.getElementById('my-statusbar'));
 ```
 
+Here, `editor` is initialized instance of monaco editor and the 2nd argument should be the node where you would like to place/show the VIM status info.
+
+To remove the attached VIM bindings, call
+
+```js
+vimMode.dispose();
+```
+
 #### AMD
 
 If you are following the official guide and integrating the AMD version of `monaco-editor`, you can follow this -
@@ -73,14 +81,6 @@ If you are following the official guide and integrating the AMD version of `mona
 </script>
 </body>
 </html>
-```
-
-Here, `editor` is initialized instance of monaco editor and the 2nd argument should be the node where you would like to place/show the VIM status info.
-
-To remove the attached VIM bindings, call
-
-```js
-vimMode.dispose();
 ```
 
 See [demo.js](https://github.com/brijeshb42/monaco-vim/tree/master/src/demo.js) for full usage.
