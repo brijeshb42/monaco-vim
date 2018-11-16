@@ -31,6 +31,50 @@ var initVimMode = window.MonacoVim.initVimMode;
 var vimMode = initVimMode(editor, document.getElementById('my-statusbar'));
 ```
 
+#### AMD
+
+If you are following the official guide and integrating the AMD version of `monaco-editor`, you can follow this -
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
+</head>
+<body>
+
+<div id="container" style="width:800px;height:600px;border:1px solid grey"></div>
+<div id="status"></div>
+
+<script src="https://unpkg.com/monaco-editor/min/vs/loader.js"></script>
+<script>
+  require.config({
+    paths: {
+      'vs': 'https://unpkg.com/monaco-editor/min/vs',
+      'monaco-vim': 'https://unpkg.com/monaco-vim@0.0.7/dist/monaco-vim',
+    }
+  });
+  require(['vs/editor/editor.main', 'monaco-vim'], function(a, MonacoVim) {
+    var editor = monaco.editor.create(document.getElementById('container'), {
+      value: [
+        'function x() {',
+        '\tconsole.log("Hello world!");',
+        '}'
+      ].join('\n'),
+      language: 'javascript'
+    });
+    var statusNode = document.getElementById('status');
+    var vimMode = MonacoVim.initVimMode(editor, statusNode);
+
+    // remove vim mode by calling
+    // vimMode.dispose();
+  });
+</script>
+</body>
+</html>
+```
+
 Here, `editor` is initialized instance of monaco editor and the 2nd argument should be the node where you would like to place/show the VIM status info.
 
 To remove the attached VIM bindings, call

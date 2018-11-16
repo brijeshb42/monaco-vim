@@ -366,7 +366,7 @@ class CMAdapter {
     }
 
     if (!fromReplace) {
-      this.replaceStack.push(this.editor.model.getValueInRange(range));
+      this.replaceStack.push(this.editor.getModel().getValueInRange(range));
     }
 
     this.editor.executeEdits('vim', [{
@@ -385,7 +385,7 @@ class CMAdapter {
     const { editor } = this;
 
     if (!this.ctxInsert.get() && e.source === 'mouse') {
-      const maxCol = editor.model.getLineMaxColumn(position.lineNumber);
+      const maxCol = editor.getModel().getLineMaxColumn(position.lineNumber);
 
       if (e.position.column === maxCol) {
         editor.setPosition(new Position(e.position.lineNumber, maxCol - 1));
@@ -478,7 +478,7 @@ class CMAdapter {
   }
 
   lineCount() {
-    return this.editor.model.getLineCount();
+    return this.editor.getModel().getLineCount();
   }
 
   defaultTextHeight() {
@@ -489,14 +489,14 @@ class CMAdapter {
     if (line < 0) {
       return '';
     }
-    const { model } = this.editor;
+    const model = this.editor.getModel();
     const maxLines = model.getLineCount();
 
     if (line + 1 > maxLines) {
       line = maxLines - 1;
     }
 
-    return this.editor.model.getLineContent(line + 1);
+    return this.editor.getModel().getLineContent(line + 1);
   }
 
   getAnchorForSelection(selection) {
@@ -540,11 +540,11 @@ class CMAdapter {
     const p1 = toMonacoPos(start);
     const p2 = toMonacoPos(end);
 
-    return this.editor.model.getValueInRange(Range.fromPositions(p1, p2));
+    return this.editor.getModel().getValueInRange(Range.fromPositions(p1, p2));
   }
 
   getSelection() {
-    return this.editor.model.getValueInRange(this.editor.getSelection());
+    return this.editor.getModel().getValueInRange(this.editor.getSelection());
   }
 
   replaceRange(text, start, end) {
@@ -572,7 +572,7 @@ class CMAdapter {
       pos.ch = ch;
     }
 
-    const monacoPos = this.editor.model.validatePosition(toMonacoPos(pos));
+    const monacoPos = this.editor.getModel().validatePosition(toMonacoPos(pos));
     this.editor.setPosition(toMonacoPos(pos));
     this.editor.revealPosition(monacoPos);
   }
@@ -653,7 +653,7 @@ class CMAdapter {
 
   getSelections() {
     const { editor } = this;
-    return editor.getSelections().map(sel => editor.model.getValueInRange(sel));
+    return editor.getSelections().map(sel => editor.getModel().getValueInRange(sel));
   }
 
   replaceSelections(texts) {
@@ -694,7 +694,7 @@ class CMAdapter {
   }
 
   clipPos(p) {
-    const pos = this.editor.model.validatePosition(toMonacoPos(p));
+    const pos = this.editor.getModel().validatePosition(toMonacoPos(p));
     return toCmPos(pos);
   }
 
@@ -716,7 +716,7 @@ class CMAdapter {
     return {
       left: 0,
       top: range.startLineNumber - 1,
-      height: editor.model.getLineCount(),
+      height: editor.getModel().getLineCount(),
       clientHeight: range.endLineNumber - range.startLineNumber + 1,
     };
   }
@@ -822,7 +822,7 @@ class CMAdapter {
 
   findMatchingBracket(pos) {
     const mPos = toMonacoPos(pos);
-    const res = this.editor.model.matchBracket(mPos);
+    const res = this.editor.getModel().matchBracket(mPos);
 
     if (!res || !(res.length === 2)) {
       return {
@@ -836,7 +836,7 @@ class CMAdapter {
   }
 
   findFirstNonWhiteSpaceCharacter(line) {
-    return this.editor.model.getLineFirstNonWhitespaceColumn(line + 1) - 1;
+    return this.editor.getModel().getLineFirstNonWhitespaceColumn(line + 1) - 1;
   }
 
   scrollTo(x, y) {
@@ -886,8 +886,8 @@ class CMAdapter {
     const context = this;
     const { editor } = this;
     let lastSearch = null;
-    const matches = editor.model.findMatches(query, false, isRegex, matchCase) || [];
-    const initialMatch = editor.model.findNextMatch(query, monacoPos, isRegex, matchCase);
+    const matches = editor.getModel().findMatches(query, false, isRegex, matchCase) || [];
+    const initialMatch = editor.getModel().findNextMatch(query, monacoPos, isRegex, matchCase);
     let currentIndex = matches.findIndex(m => initialMatch && m.range.equalsRange(initialMatch.range)) - 1;
 
     return {
@@ -976,7 +976,7 @@ class CMAdapter {
       query = query.source;
     }
 
-    const match = this.editor.model.findNextMatch(query, this.editor.getPosition(), isRegex, matchCase);
+    const match = this.editor.getModel().findNextMatch(query, this.editor.getPosition(), isRegex, matchCase);
 
     if (!match || !match.range) {
       return;
