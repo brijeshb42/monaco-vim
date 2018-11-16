@@ -52,7 +52,7 @@ If you are following the official guide and integrating the AMD version of `mona
   require.config({
     paths: {
       'vs': 'https://unpkg.com/monaco-editor/min/vs',
-      'monaco-vim': 'https://unpkg.com/monaco-vim@0.0.7/dist/monaco-vim',
+      'monaco-vim': 'https://unpkg.com/monaco-vim/dist/monaco-vim',
     }
   });
   require(['vs/editor/editor.main', 'monaco-vim'], function(a, MonacoVim) {
