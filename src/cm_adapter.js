@@ -10,6 +10,7 @@ import {
   SelectionDirection,
   editor as monacoEditor,
 } from 'monaco-editor';
+import { TypeOperations } from 'monaco-editor/esm/vs/editor/common/controller/cursorTypeOperations';
 const VerticalRevealType = {
   Bottom: 4,
 };
@@ -437,6 +438,8 @@ class CMAdapter {
       return this.editor.getConfiguration().readOnly;
     } else if (key === 'firstLineNumber') {
       return this.firstLine() + 1;
+    } else if (key === 'indentWithTabs') {
+      return !this.editor.getModel().getOptions().insertSpaces;
     } else {
       return this.editor.getRawConfiguration()[key]
     }
@@ -1050,6 +1053,17 @@ class CMAdapter {
 
   posFromIndex(offset) {
     return toCmPos(this.editor.getModel().getPositionAt(offset));
+  }
+
+  indentLine(line, indentRight = true) {
+    const cursors = this.editor._getCursors();
+    const pos = new Position(line + 1, 1);
+    const sel = Selection.fromPositions(pos, pos);
+    // no other way than to use internal apis to preserve the undoStack for a batch of indents
+    editor.executeCommands(
+      `editor.action.${indentRight ? 'indent' : 'outdent'}Lines`,
+      TypeOperations[indentRight ? 'indent' : 'outdent'](cursors.context.config, this.editor.getModel(), [sel]),
+    );
   }
 }
 

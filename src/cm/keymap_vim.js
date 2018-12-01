@@ -2105,11 +2105,13 @@ var Vim = function() {
         // line. We don't want this in indent, so we go back a line.
         endLine--;
       }
+      cm.pushUndoStop();
       for (var i = startLine; i <= endLine; i++) {
         for (var j = 0; j < repeat; j++) {
           cm.indentLine(i, args.indentRight);
         }
       }
+      cm.pushUndoStop();
       return motions.moveToFirstNonWhiteSpaceCharacter(cm, ranges[0].anchor);
     },
     changeCase: function(cm, args, ranges, oldAnchor, newHead) {
