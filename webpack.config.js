@@ -70,7 +70,12 @@ module.exports = (_env, argv) => {
         commonjs: 'monaco-editor',
         commonjs2: 'monaco-editor',
         amd: 'vs/editor/editor.main',
-      }
+      },
+      'monaco-editor/esm/vs/editor/common/controller/cursorTypeOperations': {
+        commonjs: 'monaco-editor/esm/vs/editor/common/controller/cursorTypeOperations',
+        commonjs2: 'monaco-editor/esm/vs/editor/common/controller/cursorTypeOperations',
+        amd: 'vs/editor/common/controller/cursorTypeOperations',
+      },
     } : {},
   }
 };

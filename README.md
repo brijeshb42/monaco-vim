@@ -11,10 +11,12 @@ Vim keybindings for monaco-editor [demo](https://editor-a5ea1.firebaseapp.com)
 npm install monaco-vim
 ```
 
-#### As global
+##### As global
 
-Add this script [https://unpkg.com/monaco-vim/dist/monaco-vim.js](https://unpkg.com/monaco-vim/dist/monaco-vim.js) after monaco-editor's `script` tag.
-Make sure that `monaco` is already available on the `window` global. Vim will be available as `MonacoVim` global.
+This package will only work when bundled using webpack/browserify or using AMD. Including globally
+is not possible due to the use of an internal dependency of monaco-editor which is not exposed in
+the API. Loading 'monaco' globally is also not possible as you'll have to use its `loader.js` file.
+If you are using that, then there will be no problem. See [AMD](#AMD).
 
 ### Usage
 
