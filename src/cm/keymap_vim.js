@@ -1,13 +1,13 @@
 /* eslint-disable */
 
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
-// Distributed under an MIT license: http://codemirror.net/LICENSE
+// Distributed under an MIT license: https://codemirror.net/LICENSE
 
 // Parts of the original code has been modified to work with monaco
 
 /**
  * Supported keybindings:
- *   Too many to list. Refer to defaultKeyMap below.
+ *   Too many to list. Refer to defaultKeymap below.
  *
  * Supported Ex commands:
  *   Refer to defaultExCommandMap below.
@@ -49,6 +49,7 @@ var defaultKeymap = [
   { keys: '<Down>', type: 'keyToKey', toKeys: 'j' },
   { keys: '<Space>', type: 'keyToKey', toKeys: 'l' },
   { keys: '<BS>', type: 'keyToKey', toKeys: 'h', context: 'normal'},
+  { keys: '<Del>', type: 'keyToKey', toKeys: 'x', context: 'normal'},
   { keys: '<C-Space>', type: 'keyToKey', toKeys: 'W' },
   { keys: '<C-BS>', type: 'keyToKey', toKeys: 'B', context: 'normal' },
   { keys: '<S-Space>', type: 'keyToKey', toKeys: 'w' },
@@ -129,6 +130,7 @@ var defaultKeymap = [
   { keys: 'd', type: 'operator', operator: 'delete' },
   { keys: 'y', type: 'operator', operator: 'yank' },
   { keys: 'c', type: 'operator', operator: 'change' },
+  { keys: '=', type: 'operator', operator: 'indentAuto' },
   { keys: '>', type: 'operator', operator: 'indent', operatorArgs: { indentRight: true }},
   { keys: '<', type: 'operator', operator: 'indent', operatorArgs: { indentRight: false }},
   { keys: 'g~', type: 'operator', operator: 'changeCase' },
@@ -148,6 +150,8 @@ var defaultKeymap = [
   { keys: '~', type: 'operatorMotion', operator: 'changeCase', motion: 'moveByCharacters', motionArgs: { forward: true }, operatorArgs: { shouldMoveCursor: true }, context: 'normal'},
   { keys: '~', type: 'operator', operator: 'changeCase', context: 'visual'},
   { keys: '<C-w>', type: 'operatorMotion', operator: 'delete', motion: 'moveByWords', motionArgs: { forward: false, wordEnd: false }, context: 'insert' },
+  //ignore C-w in normal mode
+  { keys: '<C-w>', type: 'idle', context: 'normal' },
   // Actions
   { keys: '<C-i>', type: 'action', action: 'jumpListWalk', actionArgs: { forward: true }},
   { keys: '<C-o>', type: 'action', action: 'jumpListWalk', actionArgs: { forward: false }},
@@ -204,6 +208,7 @@ var defaultKeymap = [
   // Ex command
   { keys: ':', type: 'ex' }
 ];
+var defaultKeymapLength = defaultKeymap.length;
 
 /**
  * Ex commands
@@ -243,14 +248,12 @@ var Vim = function() {
     CodeMirror.signal(cm, "vim-mode-change", {mode: "normal"});
     cm.on('cursorActivity', onCursorActivity);
     maybeInitVimState(cm);
-    // CodeMirror.on(cm.getInputField(), 'paste', getOnPasteFn(cm));
     cm.enterVimMode();
   }
 
   function leaveVimMode(cm) {
     cm.setOption('disableInput', false);
     cm.off('cursorActivity', onCursorActivity);
-    // CodeMirror.off(cm.getInputField(), 'paste', getOnPasteFn(cm));
     cm.state.vim = null;
     cm.leaveVimMode();
   }
@@ -259,10 +262,6 @@ var Vim = function() {
     cm.attached = false;
     if (this == CodeMirror.keyMap.vim) {
       CodeMirror.rmClass(cm.getWrapperElement(), "cm-fat-cursor");
-      // if (cm.getOption("inputStyle") == "contenteditable" && document.body.style.caretColor != null) {
-      //   disableFatCursorMark(cm);
-      //   cm.getInputField().style.caretColor = "";
-      // }
     }
 
     if (!next || next.attach != attachVimMap)
@@ -373,7 +372,7 @@ var Vim = function() {
 
   function getOnPasteFn(cm) {
     var vim = cm.state.vim;
-    if (!vim || !vim.onPasteFn) {
+    if (!vim.onPasteFn) {
       vim.onPasteFn = function() {
         if (!vim.insertMode) {
           cm.setCursor(offsetCursor(cm.getCursor(), 0, 1));
@@ -737,6 +736,75 @@ var Vim = function() {
     },
     unmap: function(lhs, ctx) {
       exCommandDispatcher.unmap(lhs, ctx);
+    },
+    // Non-recursive map function.
+    // NOTE: This will not create mappings to key maps that aren't present
+    // in the default key map. See TODO at bottom of function.
+    noremap: function(lhs, rhs, ctx) {
+      function toCtxArray(ctx) {
+        return ctx ? [ctx] : ['normal', 'insert', 'visual'];
+      }
+      var ctxsToMap = toCtxArray(ctx);
+      // Look through all actual defaults to find a map candidate.
+      var actualLength = defaultKeymap.length, origLength = defaultKeymapLength;
+      for (var i = actualLength - origLength; i < actualLength && ctxsToMap.length; i++) {
+        var mapping = defaultKeymap[i];
+        // Omit mappings that operate in the wrong context(s) and those of invalid type.
+        if (mapping.keys == rhs &&
+          (!ctx || !mapping.context || mapping.context === ctx) &&
+          mapping.type.substr(0, 2) !== 'ex' &&
+          mapping.type.substr(0, 3) !== 'key') {
+          // Make a shallow copy of the original keymap entry.
+          var newMapping = {};
+          for (var key in mapping) {
+            newMapping[key] = mapping[key];
+          }
+          // Modify it point to the new mapping with the proper context.
+          newMapping.keys = lhs;
+          if (ctx && !newMapping.context) {
+            newMapping.context = ctx;
+          }
+          // Add it to the keymap with a higher priority than the original.
+          this._mapCommand(newMapping);
+          // Record the mapped contexts as complete.
+          var mappedCtxs = toCtxArray(mapping.context);
+          ctxsToMap = ctxsToMap.filter(function(el) { return mappedCtxs.indexOf(el) === -1; });
+        }
+      }
+      // TODO: Create non-recursive keyToKey mappings for the unmapped contexts once those exist.
+    },
+    // Remove all user-defined mappings for the provided context.
+    mapclear: function(ctx) {
+      // Partition the existing keymap into user-defined and true defaults.
+      var actualLength = defaultKeymap.length, origLength = defaultKeymapLength;
+      var userKeymap = defaultKeymap.slice(0, actualLength - origLength);
+      defaultKeymap = defaultKeymap.slice(actualLength - origLength);
+      if (ctx) {
+        // If a specific context is being cleared, we need to keep mappings
+        // from all other contexts.
+        for (var i = userKeymap.length - 1; i >= 0; i--) {
+          var mapping = userKeymap[i];
+          if (ctx !== mapping.context) {
+            if (mapping.context) {
+              this._mapCommand(mapping);
+            } else {
+              // `mapping` applies to all contexts so create keymap copies
+              // for each context except the one being cleared.
+              var contexts = ['normal', 'insert', 'visual'];
+              for (var j in contexts) {
+                if (contexts[j] !== ctx) {
+                  var newMapping = {};
+                  for (var key in mapping) {
+                    newMapping[key] = mapping[key];
+                  }
+                  newMapping.context = contexts[j];
+                  this._mapCommand(newMapping);
+                }
+              }
+            }
+          }
+        }
+      }
     },
     // TODO: Expose setOption and getOption as instance methods. Need to decide how to namespace
     // them, or somehow make them work with the existing CodeMirror setOption/getOption API.
@@ -1169,11 +1237,9 @@ var Vim = function() {
           break;
         case 'operator':
           this.processOperator(cm, vim, command);
-          // cm.pushUndoStop();
           break;
         case 'operatorMotion':
           this.processOperatorMotion(cm, vim, command);
-          // cm.pushUndoStop();
           break;
         case 'action':
           this.processAction(cm, vim, command);
@@ -1635,6 +1701,7 @@ var Vim = function() {
       vim.lastEditActionCommand = actionCommand;
       macroModeState.lastInsertModeChanges.changes = [];
       macroModeState.lastInsertModeChanges.expectCursorActivityForChange = false;
+      macroModeState.lastInsertModeChanges.visualBlock = vim.visualBlock ? vim.sel.head.line - vim.sel.anchor.line : 0;
     }
   };
 
@@ -1765,7 +1832,7 @@ var Vim = function() {
       if (line < first && cur.line == first){
         return this.moveToStartOfLine(cm, head, motionArgs, vim);
       }else if (line > last && cur.line == last){
-          return this.moveToEol(cm, head, motionArgs, vim);
+          return this.moveToEol(cm, head, motionArgs, vim, true);
       }
       if (motionArgs.toFirstChar){
         endCh=cm.findFirstNonWhiteSpaceCharacter(line);
@@ -1823,7 +1890,7 @@ var Vim = function() {
       var curEnd = null;
       var repeat = motionArgs.repeat;
       if (!repeat) {
-        repeat = Math.floor(scrollbox.clientHeight / (2 * cm.defaultTextHeight()));
+        repeat = scrollbox.clientHeight / (2 * cm.defaultTextHeight());
       }
       var orig = cm.charCoords(head, 'local');
       motionArgs.repeat = repeat;
@@ -1867,13 +1934,15 @@ var Vim = function() {
       vim.lastHSPos = cm.charCoords(head,'div').left;
       return moveToColumn(cm, repeat);
     },
-    moveToEol: function(cm, head, motionArgs, vim) {
+    moveToEol: function(cm, head, motionArgs, vim, keepHPos) {
       var cur = head;
-      vim.lastHPos = Infinity;
       var retval= Pos(cur.line + motionArgs.repeat - 1, Infinity);
       var end=cm.clipPos(retval);
       end.ch--;
-      vim.lastHSPos = cm.charCoords(end,'div').left;
+      if (!keepHPos) {
+         vim.lastHPos = Infinity;
+         vim.lastHSPos = cm.charCoords(end,'div').left;
+      }
       return retval;
     },
     moveToFirstNonWhiteSpaceCharacter: function(cm, head) {
@@ -1919,13 +1988,11 @@ var Vim = function() {
     textObjectManipulation: function(cm, head, motionArgs, vim) {
       // TODO: lots of possible exceptions that can be thrown here. Try da(
       //     outside of a () block.
-
-      // TODO: adding <> >< to this map doesn't work, presumably because
-      // they're operators
       var mirroredPairs = {'(': ')', ')': '(',
                            '{': '}', '}': '{',
-                           '[': ']', ']': '['};
-      var selfPaired = {'\'': true, '"': true};
+                           '[': ']', ']': '[',
+                          '<': '>', '>': '<'};
+      var selfPaired = {'\'': true, '"': true, '`': true};
 
       var character = motionArgs.selectedCharacter;
       // 'b' refers to  '()' block.
@@ -1981,7 +2048,7 @@ var Vim = function() {
       var repeat = motionArgs.repeat;
       var forward = motionArgs.forward === lastSearch.forward;
       var increment = (lastSearch.increment ? 1 : 0) * (forward ? -1 : 1);
-      cm.moveH(-1 * increment, 'char');
+      cm.moveH(-increment, 'char');
       motionArgs.inclusive = forward ? true : false;
       var curEnd = moveToCharacter(cm, repeat, forward, lastSearch.selectedCharacter);
       if (!curEnd) {
@@ -2013,7 +2080,6 @@ var Vim = function() {
     change: function(cm, args, ranges) {
       var finalHead, text;
       var vim = cm.state.vim;
-      vimGlobalState.macroModeState.lastInsertModeChanges.inVisualBlock = vim.visualBlock;
       if (!vim.visualMode) {
         var anchor = ranges[0].anchor,
             head = ranges[0].head;
@@ -2113,6 +2179,10 @@ var Vim = function() {
         }
       }
       cm.pushUndoStop();
+      return motions.moveToFirstNonWhiteSpaceCharacter(cm, ranges[0].anchor);
+    },
+    indentAuto: function(cm, _args, ranges) {
+      cm.execCommand("indentAuto");
       return motions.moveToFirstNonWhiteSpaceCharacter(cm, ranges[0].anchor);
     },
     changeCase: function(cm, args, ranges, oldAnchor, newHead) {
@@ -2215,18 +2285,6 @@ var Vim = function() {
       }
     },
     scrollToCursor: function(cm, actionArgs) {
-      // var lineNum = cm.getCursor().line;
-      // var charCoords = cm.charCoords(Pos(lineNum, 0), 'local');
-      // var height = cm.getScrollInfo().clientHeight;
-      // var y = charCoords.top;
-      // var lineHeight = charCoords.bottom - y;
-      // switch (actionArgs.position) {
-      //   case 'center': y = y - (height / 2) + lineHeight;
-      //     break;
-      //   case 'bottom': y = y - height + lineHeight;
-      //     break;
-      // }
-      // cm.scrollTo(null, y);
       cm.moveCurrentLineTo(actionArgs.position);
     },
     replayMacro: function(cm, actionArgs, vim) {
@@ -2235,6 +2293,8 @@ var Vim = function() {
       var macroModeState = vimGlobalState.macroModeState;
       if (registerName == '@') {
         registerName = macroModeState.latestRegister;
+      } else {
+        macroModeState.latestRegister = registerName;
       }
       while(repeat--){
         executeMacroRegister(cm, vim, macroModeState, registerName);
@@ -2274,6 +2334,8 @@ var Vim = function() {
       } else if (insertAt == 'firstNonBlank') {
         head = motions.moveToFirstNonWhiteSpaceCharacter(cm, head);
       } else if (insertAt == 'startOfSelectedArea') {
+        if (!vim.visualMode)
+          return;
         if (!vim.visualBlock) {
           if (sel.head.line < sel.anchor.line) {
             head = sel.head;
@@ -2282,11 +2344,13 @@ var Vim = function() {
           }
         } else {
           head = Pos(
-              Math.min(sel.head.line, sel.anchor.line),
-              Math.min(sel.head.ch, sel.anchor.ch));
+            Math.min(sel.head.line, sel.anchor.line),
+            Math.min(sel.head.ch, sel.anchor.ch));
           height = Math.abs(sel.head.line - sel.anchor.line) + 1;
         }
       } else if (insertAt == 'endOfSelectedArea') {
+        if (!vim.visualMode)
+          return;
         if (!vim.visualBlock) {
           if (sel.head.line >= sel.anchor.line) {
             head = offsetCursor(sel.head, 0, 1);
@@ -2295,8 +2359,8 @@ var Vim = function() {
           }
         } else {
           head = Pos(
-              Math.min(sel.head.line, sel.anchor.line),
-              Math.max(sel.head.ch + 1, sel.anchor.ch));
+            Math.min(sel.head.line, sel.anchor.line),
+            Math.max(sel.head.ch + 1, sel.anchor.ch));
           height = Math.abs(sel.head.line - sel.anchor.line) + 1;
         }
       } else if (insertAt == 'inplace') {
@@ -2305,9 +2369,6 @@ var Vim = function() {
         }
       }
       cm.setOption('disableInput', false);
-      if (vim.visualMode) {
-        exitVisualMode(cm);
-      }
       if (actionArgs && actionArgs.replace) {
         // Handle Replace-mode as a special case of insert mode.
         cm.toggleOverwrite(true);
@@ -2322,6 +2383,9 @@ var Vim = function() {
         // Only record if not replaying.
         cm.on('change', onChange);
         CodeMirror.on(cm.getInputField(), 'keydown', onKeyEventTargetKeyDown);
+      }
+      if (vim.visualMode) {
+        exitVisualMode(cm);
       }
       selectForInsert(cm, head, height);
     },
@@ -2480,7 +2544,17 @@ var Vim = function() {
       }
       var linewise = register.linewise;
       var blockwise = register.blockwise;
-      if (linewise) {
+      if (blockwise) {
+        text = text.split('\n');
+        if (linewise) {
+          text.pop();
+        }
+        for (var i = 0; i < text.length; i++) {
+          text[i] = (text[i] == '') ? ' ' : text[i];
+        }
+        cur.ch += actionArgs.after ? 1 : 0;
+        cur.ch = Math.min(lineLength(cm, cur.line), cur.ch);
+      } else if (linewise) {
         if(vim.visualMode) {
           text = vim.visualLine ? text.slice(0, -1) : '\n' + text.slice(0, text.length - 1) + '\n';
         } else if (actionArgs.after) {
@@ -2492,12 +2566,6 @@ var Vim = function() {
           cur.ch = 0;
         }
       } else {
-        if (blockwise) {
-          text = text.split('\n');
-          for (var i = 0; i < text.length; i++) {
-            text[i] = (text[i] == '') ? ' ' : text[i];
-          }
-        }
         cur.ch += actionArgs.after ? 1 : 0;
       }
       var curPosFinal;
@@ -3128,14 +3196,6 @@ var Vim = function() {
     curEnd.line++;
   }
 
-  // function findFirstNonWhiteSpaceCharacter(text) {
-  //   if (!text) {
-  //     return 0;
-  //   }
-  //   var firstNonWS = text.search(/\S/);
-  //   return firstNonWS == -1 ? text.length : firstNonWS;
-  // }
-
   function expandWordUnderCursor(cm, inclusive, _forward, bigWord, noSymbol) {
     var cur = getHead(cm);
     var line = cm.getLine(cur.line);
@@ -3726,11 +3786,13 @@ var Vim = function() {
     var bracketRegexp = ({
       '(': /[()]/, ')': /[()]/,
       '[': /[[\]]/, ']': /[[\]]/,
-      '{': /[{}]/, '}': /[{}]/})[symb];
+      '{': /[{}]/, '}': /[{}]/,
+      '<': /[<>]/, '>': /[<>]/})[symb];
     var openSym = ({
       '(': '(', ')': '(',
       '[': '[', ']': '[',
-      '{': '{', '}': '{'})[symb];
+      '{': '{', '}': '{',
+      '<': '<', '>': '<'})[symb];
     var curChar = cm.getLine(cur.line).charAt(cur.ch);
     // Due to the behavior of scanForBracket, we need to add an offset if the
     // cursor is on a matching open bracket.
@@ -4214,13 +4276,6 @@ var Vim = function() {
     }
   }
   function getUserVisibleLines(cm) {
-    // var scrollInfo = cm.getScrollInfo();
-    // var occludeToleranceTop = 6;
-    // var occludeToleranceBottom = 10;
-    // var from = cm.coordsChar({left:0, top: occludeToleranceTop + scrollInfo.top}, 'local');
-    // var bottomY = scrollInfo.clientHeight - occludeToleranceBottom + scrollInfo.top;
-    // var to = cm.coordsChar({left:0, top: bottomY}, 'local');
-    // return {top: from.line, bottom: to.line};
     return cm.getUserVisibleLines();
   }
 
@@ -4480,7 +4535,8 @@ var Vim = function() {
         }
       }
       throw Error('No such mapping.');
-    }
+    },
+
   };
 
   var exCommands = {
@@ -5048,32 +5104,7 @@ var Vim = function() {
     var insertModeChangeRegister = vimGlobalState.registerController.getRegister('.');
     var isPlaying = macroModeState.isPlaying;
     var lastChange = macroModeState.lastInsertModeChanges;
-    // In case of visual block, the insertModeChanges are not saved as a
-    // single word, so we convert them to a single word
-    // so as to update the ". register as expected in real vim.
-    var text = [];
     if (!isPlaying) {
-      var selLength = lastChange.inVisualBlock && vim.lastSelection ?
-          vim.lastSelection.visualBlock.height : 1;
-      var changes = lastChange.changes;
-      var text = [];
-      var i = 0;
-      // In case of multiple selections in blockwise visual,
-      // the inserted text, for example: 'f<Backspace>oo', is stored as
-      // 'f', 'f', InsertModeKey 'o', 'o', 'o', 'o'. (if you have a block with 2 lines).
-      // We push the contents of the changes array as per the following:
-      // 1. In case of InsertModeKey, just increment by 1.
-      // 2. In case of a character, jump by selLength (2 in the example).
-      while (i < changes.length) {
-        // This loop will convert 'ff<bs>oooo' to 'f<bs>oo'.
-        text.push(changes[i]);
-        if (changes[i] instanceof InsertModeKey) {
-           i++;
-        } else {
-           i+= selLength;
-        }
-      }
-      lastChange.changes = text;
       cm.off('change', onChange);
       CodeMirror.off(cm.getInputField(), 'keydown', onKeyEventTargetKeyDown);
     }
@@ -5205,17 +5236,23 @@ var Vim = function() {
     if (!macroModeState.isPlaying) {
       while(changeObj) {
         lastChange.expectCursorActivityForChange = true;
-        if (changeObj.origin == '+input' || changeObj.origin == 'paste'
-            || changeObj.origin === undefined /* only in testing */) {
+        if (lastChange.ignoreCount > 1) {
+          lastChange.ignoreCount--;
+        } else if (changeObj.origin == '+input' || changeObj.origin == 'paste' || changeObj.origin === undefined /* only in testing */) {
+          var selectionCount = cm.listSelections().length;
+          if (selectionCount > 1)
+          lastChange.ignoreCount = selectionCount;
           var text = changeObj.text.join('\n');
           if (lastChange.maybeReset) {
             lastChange.changes = [];
             lastChange.maybeReset = false;
           }
-          if (cm.state.overwrite && !/\n/.test(text)) {
+          if (text) {
+            if (cm.state.overwrite && !/\n/.test(text)) {
               lastChange.changes.push([text]);
-          } else {
+            } else {
               lastChange.changes.push(text);
+            }
           }
         }
         // Change objects may be chained with next.
@@ -5380,18 +5417,15 @@ var Vim = function() {
       return true;
     }
     var head = cm.getCursor('head');
-    var inVisualBlock = vimGlobalState.macroModeState.lastInsertModeChanges.inVisualBlock;
-    if (inVisualBlock) {
+    var visualBlock = vimGlobalState.macroModeState.lastInsertModeChanges.visualBlock;
+    if (visualBlock) {
       // Set up block selection again for repeating the changes.
-      var vim = cm.state.vim;
-      var lastSel = vim.lastSelection;
-      var offset = getOffset(lastSel.anchor, lastSel.head);
-      selectForInsert(cm, head, offset.line + 1);
+      selectForInsert(cm, head, visualBlock + 1);
       repeat = cm.listSelections().length;
       cm.setCursor(head);
     }
     for (var i = 0; i < repeat; i++) {
-      if (inVisualBlock) {
+      if (visualBlock) {
         cm.setCursor(offsetCursor(head, i, 0));
       }
       for (var j = 0; j < changes.length; j++) {
@@ -5408,7 +5442,7 @@ var Vim = function() {
         }
       }
     }
-    if (inVisualBlock) {
+    if (visualBlock) {
       cm.setCursor(offsetCursor(head, 0, 1));
     }
   }

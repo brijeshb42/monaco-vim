@@ -1081,6 +1081,17 @@ class CMAdapter {
 
     this.statusBar.showNotification(html);
   }
+
+  execCommand(commandName) {
+    if (commandName === 'indentAuto') {
+      const action = this.editor.getAction('editor.action.formatSelection');
+      console.log(action);
+
+      if (action) {
+        action.run();
+      }
+    }
+  }
 }
 
 export default CMAdapter;
