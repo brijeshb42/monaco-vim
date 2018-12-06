@@ -26,13 +26,6 @@ import { initVimMode } from 'monaco-vim';
 const vimMode = initVimMode(editor, document.getElementById('my-statusbar'))
 ```
 
-OR
-
-```js
-var initVimMode = window.MonacoVim.initVimMode;
-var vimMode = initVimMode(editor, document.getElementById('my-statusbar'));
-```
-
 Here, `editor` is initialized instance of monaco editor and the 2nd argument should be the node where you would like to place/show the VIM status info.
 
 To remove the attached VIM bindings, call
