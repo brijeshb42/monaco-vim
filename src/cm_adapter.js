@@ -293,6 +293,7 @@ class CMAdapter {
     this.listeners = {};
     this.curOp = {};
     this.attached = false;
+    this.statusBar = null;
     this.addLocalListeners();
     this.ctxInsert = this.editor.createContextKey('insertMode', true);
   }
@@ -1064,6 +1065,26 @@ class CMAdapter {
       `editor.action.${indentRight ? 'indent' : 'outdent'}Lines`,
       TypeOperations[indentRight ? 'indent' : 'outdent'](cursors.context.config, this.editor.getModel(), [sel]),
     );
+  }
+
+  setStatusBar(statusBar) {
+    this.statusBar = statusBar;
+  }
+
+  openDialog(html, callback, options) {
+    if (!this.statusBar) {
+      return;
+    }
+
+    return this.statusBar.setSec(html, callback, options);
+  }
+
+  openNotification(html) {
+    if (!this.statusBar) {
+      return;
+    }
+
+    this.statusBar.showNotification(html);
   }
 }
 

@@ -9,11 +9,11 @@ export function initVimMode(editor, statusbarNode = null, StatusBarClass = Statu
     return vimAdapter;
   }
 
-  const statusbar = new StatusBarClass(statusbarNode, editor);
+  const statusBar = new StatusBarClass(statusbarNode, editor);
   let keyBuffer = '';
 
   vimAdapter.on('vim-mode-change', (mode) => {
-    statusbar.setMode(mode);
+    statusBar.setMode(mode);
   });
 
   vimAdapter.on('vim-keypress', (key) => {
@@ -22,30 +22,23 @@ export function initVimMode(editor, statusbarNode = null, StatusBarClass = Statu
     } else {
       keyBuffer += key;
     }
-    statusbar.setKeyBuffer(keyBuffer);
+    statusBar.setKeyBuffer(keyBuffer);
   });
 
   vimAdapter.on('vim-command-done', () => {
     keyBuffer = '';
-    statusbar.setKeyBuffer(keyBuffer);
+    statusBar.setKeyBuffer(keyBuffer);
   });
 
   vimAdapter.on('dispose', function() {
-    statusbar.toggleVisibility(false);
-    statusbar.closeInput();
-    statusbar.innerHTML = '';
+    statusBar.toggleVisibility(false);
+    statusBar.closeInput();
+    statusBar.innerHTML = '';
   });
 
-  VimMode.defineExtension('openDialog', function(html, callback, options) {
-    return statusbar.setSec(html, callback, options);
-  });
-
-  VimMode.defineExtension('openNotification', function(html) {
-    statusbar.showNotification(html);
-  });
-
+  statusBar.toggleVisibility(true);
+  vimAdapter.setStatusBar(statusBar)
   vimAdapter.attach();
-  statusbar.toggleVisibility(true);
 
   return vimAdapter;
 }

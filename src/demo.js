@@ -2,8 +2,8 @@ import * as monaco from 'monaco-editor';
 
 import { initVimMode } from './';
 
-const editorNode = document.getElementById('editor');
-const statusNode = document.getElementById('status');
+const editorNode = document.getElementById('editor1');
+const statusNode = document.getElementById('status1');
 const editor = monaco.editor.create(editorNode, {
   value: [1, 2, 3, 4, 5, 6, 7, 8].map(t => 'import').join('\n'),
   minimap: {
@@ -15,15 +15,22 @@ const editor = monaco.editor.create(editorNode, {
   scrollBeyondLastLine: false,
 });
 editor.focus();
-
 const vimMode = initVimMode(editor, statusNode);
-window.vim = vimMode;
-window.editor = editor;
 
-if (window.localStorage.getItem('value')) {
-  editor.setValue(window.localStorage.getItem('value'));
-}
+const editorNode2 = document.getElementById('editor2');
+const statusNode2 = document.getElementById('status2');
+const editor2 = monaco.editor.create(editorNode2, {
+  value: [1, 2, 3, 4, 5, 6, 7, 8].map(t => 'import').join('\n'),
+  minimap: {
+    enabled: false,
+  },
+  theme: 'vs',
+  language: 'javascript',
+  fontSize: 15,
+  scrollBeyondLastLine: false,
+});
+editor.focus();
+const vimMode2 = initVimMode(editor2, statusNode2);
 
-setInterval(() => {
-  window.localStorage.setItem('value', editor.getValue());
-}, 2000)
+window.vimMode = vimMode;
+window.vimMode2 = vimMode2;
