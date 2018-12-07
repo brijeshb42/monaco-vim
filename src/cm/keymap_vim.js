@@ -785,11 +785,13 @@ var Vim = function() {
       function handleEsc() {
         if (key == '<Esc>') {
           // Clear input state and get back to normal mode.
-          clearInputState(cm);
+          const actionTaken = clearInputState(cm);
           if (vim.visualMode) {
             exitVisualMode(cm);
           } else if (vim.insertMode) {
             exitInsertMode(cm);
+          } else {
+            return actionTaken;
           }
           return true;
         }
@@ -797,14 +799,16 @@ var Vim = function() {
       function doKeyToKey(keys) {
         // TODO: prevent infinite recursion.
         var match;
+        let handled = false;
         while (keys) {
           // Pull off one command key, which is either a single character
           // or a special sequence wrapped in '<' and '>', e.g. '<Space>'.
           match = (/<\w+-.+?>|<\w+>|./).exec(keys);
           key = match[0];
           keys = keys.substring(match.index + key.length);
-          CodeMirror.Vim.handleKey(cm, key, 'mapping');
+          handled = handled || CodeMirror.Vim.handleKey(cm, key, 'mapping');
         }
+        return handled;
       }
 
       function handleKeyInsertMode() {
@@ -878,9 +882,9 @@ var Vim = function() {
             cm.curOp.isVimOp = true;
             try {
               if (command.type == 'keyToKey') {
-                doKeyToKey(command.toKeys);
+                return doKeyToKey(command.toKeys);
               } else {
-                commandDispatcher.processCommand(cm, vim, command);
+                return commandDispatcher.processCommand(cm, vim, command);
               }
             } catch (e) {
               // clear VIM state in case it's in a bad state.
@@ -891,7 +895,6 @@ var Vim = function() {
               }
               throw e;
             }
-            return true;
           });
         };
       }
@@ -946,8 +949,10 @@ var Vim = function() {
   };
 
   function clearInputState(cm, reason) {
+    const oldInputState = cm.state.vim.inputState;
     cm.state.vim.inputState = new InputState();
     CodeMirror.signal(cm, 'vim-command-done', reason);
+    return oldInputState == cm.state.vim.inputState;
   }
 
   /*
@@ -1164,8 +1169,7 @@ var Vim = function() {
       vim.inputState.repeatOverride = command.repeatOverride;
       switch (command.type) {
         case 'motion':
-          this.processMotion(cm, vim, command);
-          break;
+          return this.processMotion(cm, vim, command);
         case 'operator':
           this.processOperator(cm, vim, command);
           // cm.pushUndoStop();
@@ -1191,7 +1195,7 @@ var Vim = function() {
     processMotion: function(cm, vim, command) {
       vim.inputState.motion = command.motion;
       vim.inputState.motionArgs = copyArgs(command.motionArgs);
-      this.evalInput(cm, vim);
+      return this.evalInput(cm, vim);
     },
     processOperator: function(cm, vim, command) {
       var inputState = vim.inputState;
@@ -1480,7 +1484,7 @@ var Vim = function() {
         var motionResult = motions[motion](cm, origHead, motionArgs, vim);
         vim.lastMotion = motions[motion];
         if (!motionResult) {
-          return;
+          return false;
         }
         if (motionArgs.toJumplist) {
           var jumpList = vimGlobalState.jumpList;
@@ -1626,6 +1630,7 @@ var Vim = function() {
           cm.setCursor(operatorMoveTo);
         }
       }
+      return true;
     },
     recordLastEdit: function(vim, inputState, actionCommand) {
       var macroModeState = vimGlobalState.macroModeState;
@@ -1763,8 +1768,14 @@ var Vim = function() {
       // move to previous/next line is triggered.
       if (line < first && cur.line == first){
         return this.moveToStartOfLine(cm, head, motionArgs, vim);
-      }else if (line > last && cur.line == last){
-          return this.moveToEol(cm, head, motionArgs, vim);
+      } else if (line > last && cur.line == last) {
+        const moveToEolResult = this.moveToEol(cm, head, motionArgs, vim);
+        if (moveToEolResult.ch == Infinity) {
+          // We're at the end of the line, and the last column. No-op.
+          return undefined;
+        } else {
+          return moveToEolResult;
+        }
       }
       if (motionArgs.toFirstChar){
         endCh=cm.findFirstNonWhiteSpaceCharacter(line);

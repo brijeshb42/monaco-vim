@@ -19,25 +19,29 @@
       width: 100%;
       min-height: 600px;
     }
-    #status {
+    .status {
       font-family: 'Courier New', Courier, monospace;
       font-weight: bold;
+      background-color: lightgray;
     }
-    #status input {
+    .status input {
       outline: none;
       border: none;
       background: transparent;
+    }
+    .group {
+      border: 1px solid black;
     }
   </style>
 </head>
 
 <body>
   <div class="container">
-    <div>
+    <div class="group">
       <div class="editor" id="editor1"></div>
       <div class="status" id="status1"></div>
     </div>
-    <div>
+    <div class="group">
       <div class="editor" id="editor2"></div>
       <div class="status" id="status2"></div>
     </div>

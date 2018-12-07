@@ -328,10 +328,17 @@ class CMAdapter {
     if (CMAdapter.keyMap.vim && CMAdapter.keyMap.vim.call) {
       const cmd = CMAdapter.keyMap.vim.call(key, this);
       if (cmd) {
-        e.preventDefault();
-        e.stopPropagation();
-        cmd();
+        const actionTaken = cmd();
+        if (actionTaken) {
+          console.log('monaco-vim handling command');
+          e.preventDefault();
+          e.stopPropagation();
+        } else {
+          console.log('monaco-vim ** NOT ** handling command');
+        }
+        return;
       }
+      console.log("Monaco-vim defs already wasn't handling this.");
     }
   }
 
