@@ -15,7 +15,7 @@ const editor = monaco.editor.create(editorNode, {
   scrollBeyondLastLine: false,
 });
 editor.focus();
-const vimMode = initVimMode(editor, statusNode);
+let vimMode = initVimMode(editor, statusNode);
 
 const editorNode2 = document.getElementById('editor2');
 const statusNode2 = document.getElementById('status2');
@@ -30,7 +30,20 @@ const editor2 = monaco.editor.create(editorNode2, {
   scrollBeyondLastLine: false,
 });
 editor.focus();
-const vimMode2 = initVimMode(editor2, statusNode2);
+let vimMode2 = initVimMode(editor2, statusNode2);
 
 window.vimMode = vimMode;
 window.vimMode2 = vimMode2;
+
+if (module.hot) {
+  module.hot.accept('./', () => {
+    const { initVimMode } = require('./');
+    vimMode.dispose();
+    vimMode2.dispose();
+    vimMode = initVimMode(editor, statusNode);
+    vimMode2 = initVimMode(editor2, statusNode2);
+    window.vimMode = vimMode;
+    window.vimMode2 = vimMode2;
+    console.log('Updated vim mode');
+  });
+}
