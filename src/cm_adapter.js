@@ -1057,7 +1057,8 @@ class CMAdapter {
   }
 
   indentLine(line, indentRight = true) {
-    const cursors = this.editor._getCursors();
+    const { editor } = this
+    const cursors = editor._getCursors();
     const pos = new Position(line + 1, 1);
     const sel = Selection.fromPositions(pos, pos);
     // no other way than to use internal apis to preserve the undoStack for a batch of indents
