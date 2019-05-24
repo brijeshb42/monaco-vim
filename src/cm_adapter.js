@@ -383,18 +383,6 @@ class CMAdapter {
   }
 
   handleCursorChange = (e) => {
-    const { position, source } = e;
-    const { editor } = this;
-
-    if (!this.ctxInsert.get() && e.source === 'mouse') {
-      const maxCol = editor.getModel().getLineMaxColumn(position.lineNumber);
-
-      if (e.position.column === maxCol) {
-        editor.setPosition(new Position(e.position.lineNumber, maxCol - 1));
-        return;
-      }
-    }
-
     this.dispatch('cursorActivity', this, e);
   }
 
