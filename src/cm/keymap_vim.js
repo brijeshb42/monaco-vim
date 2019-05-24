@@ -68,6 +68,7 @@ var defaultKeymap = [
   { keys: '<PageUp>', type: 'keyToKey', toKeys: '<C-b>' },
   { keys: '<PageDown>', type: 'keyToKey', toKeys: '<C-f>' },
   { keys: '<CR>', type: 'keyToKey', toKeys: 'j^', context: 'normal' },
+  { keys: '<CR>', type: 'keyToKey', toKeys: 'j^', context: 'visual' },
   { keys: '<Ins>', type: 'action', action: 'toggleOverwrite', context: 'insert' },
   // Motions
   { keys: 'H', type: 'motion', motion: 'moveToTopLine', motionArgs: { linewise: true, toJumplist: true }},

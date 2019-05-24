@@ -385,8 +385,9 @@ class CMAdapter {
   handleCursorChange = (e) => {
     const { position, source } = e;
     const { editor } = this;
+    const selection = editor.getSelection();
 
-    if (!this.ctxInsert.get() && e.source === 'mouse') {
+    if (!this.ctxInsert.get() && e.source === 'mouse' && selection.isEmpty()) {
       const maxCol = editor.getModel().getLineMaxColumn(position.lineNumber);
 
       if (e.position.column === maxCol) {
