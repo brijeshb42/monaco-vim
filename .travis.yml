@@ -1,0 +1,13 @@
+language: node_js
+node_js:
+  - "12"
+install: "yarn install"
+before_deploy: "yarn build"
+cache: yarn
+install: yarn
+deploy:
+  script: "npm publish"
+  on:
+    tags: true
+  skip_cleanup: true
+

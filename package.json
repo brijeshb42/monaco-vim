@@ -1,10 +1,10 @@
 {
   "name": "monaco-vim",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "Vim keybindings for monaco-editor",
   "main": "./lib/index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "echo \"No test in this repo\"",
     "start": "webpack-dev-server --mode development --host=0.0.0.0 --port=8080",
     "clean": "rm -rf lib dist local",
     "dist": "webpack --mode production",
