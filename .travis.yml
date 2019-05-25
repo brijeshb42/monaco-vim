@@ -6,8 +6,7 @@ before_deploy: "yarn build"
 cache: yarn
 install: yarn
 deploy:
+  provider: npm
   script: "npm publish"
-  on:
-    tags: true
   skip_cleanup: true
 
