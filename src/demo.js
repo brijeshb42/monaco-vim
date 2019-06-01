@@ -32,5 +32,7 @@ const editor2 = monaco.editor.create(editorNode2, {
 editor.focus();
 const vimMode2 = initVimMode(editor2, statusNode2);
 
+window.editor = editor;
 window.vimMode = vimMode;
+window.editor2 = editor;
 window.vimMode2 = vimMode2;

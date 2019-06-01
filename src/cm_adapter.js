@@ -891,9 +891,8 @@ class CMAdapter {
     const context = this;
     const { editor } = this;
     let lastSearch = null;
-    const matches = editor.getModel().findMatches(query, false, isRegex, matchCase) || [];
-    const initialMatch = editor.getModel().findNextMatch(query, monacoPos, isRegex, matchCase);
-    let currentIndex = matches.findIndex(m => initialMatch && m.range.equalsRange(initialMatch.range)) - 1;
+    const model = editor.getModel();
+    const matches = model.findMatches(query, false, isRegex, matchCase) || [];
 
     return {
       findNext() {return this.find(false);},
@@ -903,27 +902,24 @@ class CMAdapter {
           return false;
         }
 
+        let match;
+
         if (back) {
-          if (currentIndex === 0) {
+          const pos = lastSearch ? lastSearch.getStartPosition() : monacoPos;
+          match = model.findPreviousMatch(query, pos, isRegex, matchCase);
+
+          if (!match || !match.range.getStartPosition().isBeforeOrEqual(pos)) {
             return false;
-            // currentIndex = matches.length - 1;
-          } else {
-            currentIndex -= 1;
           }
         } else {
-          if (currentIndex === matches.length - 1) {
-            // currentIndex = 0;
+          const pos = lastSearch ? lastSearch.getEndPosition() : monacoPos;
+          match = model.findNextMatch(query, pos, isRegex, matchCase);
+          if (!match || !pos.isBeforeOrEqual(match.range.getStartPosition())) {
             return false;
-          } else {
-            currentIndex += 1;
           }
         }
 
-        if (!matches[currentIndex]) {
-          return false;
-        }
-
-        lastSearch = matches[currentIndex].range;
+        lastSearch = match.range;
         context.highlightRanges([lastSearch], 'currentFindMatch');
         context.highlightRanges(matches.map(m => m.range).filter(r => !r.equalsRange(lastSearch)));
 
@@ -936,9 +932,6 @@ class CMAdapter {
         return lastSearch && toCmPos(lastSearch.getEndPosition());
       },
       replace(text) {
-        if (currentIndex === matches.length) {
-          return;
-        }
         if (lastSearch) {
           editor.executeEdits('vim', [{
             range: lastSearch,
