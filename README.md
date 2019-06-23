@@ -37,7 +37,7 @@ vimMode.dispose();
 ### Handling key presses
 
 If you would like a particular keypress to not be handled by this extension, add
-your `onKeyDown` handler before initializing `monaco-vim` can call
+your `onKeyDown` handler before initializing `monaco-vim` and call
 `preventDefault()` on it. `monaco-vim` will ignore such events and won't do
 anything. This can be useful if you want to handle events like running code on
 `CTRL/CMD+Enter` which otherwise would have been eaten up by `monaco-vim`.
