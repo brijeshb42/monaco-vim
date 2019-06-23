@@ -17,6 +17,14 @@
     "monaco-editor",
     "vim"
   ],
+  "files": [
+    "dist",
+    "lib",
+    "src",
+    "LICENSE",
+    "LICENSE.codemirror.txt",
+    "README.md"
+  ],
   "author": "Brijesh Bittu <brijesh@bitwiser.in> (http://bitwiser.in/)",
   "license": "MIT",
   "devDependencies": {
