@@ -311,6 +311,12 @@ class CMAdapter {
   }
 
   handleKeyDown = (e) => {
+    // Allow previously registered keydown listeners to handle the event and
+    // prevent this extension from also handling it.
+    if (e.browserEvent.defaultPrevented) {
+      return;
+    }
+
     if (!this.attached) {
       return;
     }
