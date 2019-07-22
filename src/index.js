@@ -33,7 +33,7 @@ export function initVimMode(editor, statusbarNode = null, StatusBarClass = Statu
   vimAdapter.on('dispose', function() {
     statusBar.toggleVisibility(false);
     statusBar.closeInput();
-    statusBar.innerHTML = '';
+    statusbarNode.innerHTML = '';
   });
 
   statusBar.toggleVisibility(true);
