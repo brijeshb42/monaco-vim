@@ -4943,18 +4943,35 @@ var Vim = function() {
     var done = false;
     var lastPos = searchCursor.from();
     function replaceAll() {
-      cm.operation(function() {
-        while (!done) {
+      var matches = searchCursor.getMatches();
+      var matchesLength = matches.length;
+      cm.operation(function(matches, matchesLength) {
+        for (var i = matchesLength - 1; i >= 0; i--) {
           replace();
-          next();
+          replaceAllNext(matches, i);
         }
+        done = true;
         stop();
-      });
+      }.bind(this, matches, matchesLength));
     }
     function replace() {
       var text = cm.getRange(searchCursor.from(), searchCursor.to());
       var newText = text.replace(query, replaceWith);
       searchCursor.replace(newText);
+    }
+    function replaceAllNext(matches, index) {
+          var hasNext = searchCursor.jumpTo(index) &&
+            isInRange(searchCursor.from(), lineStart, lineEnd);
+        var match = matches.pop();
+        if (hasNext && !global && lastPos && searchCursor.from().line == lastPos.line) {
+          // Skip over multiple occurrences on the same line when 'global' is
+          // not true.
+          return;
+        }
+        cm.scrollIntoView(searchCursor.from(), 30);
+        lastPos = searchCursor.from();
+        done = false;
+        return;
     }
     function next() {
       // The below only loops to skip over multiple occurrences on the same
