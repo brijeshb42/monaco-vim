@@ -2057,6 +2057,9 @@ var Vim = function() {
     },
     // delete is a javascript keyword.
     'delete': function(cm, args, ranges) {
+      // Add to the undo stack explicitly so that this delete is recorded as a
+      // specific action instead of being bundled with generic other edits.
+      cm.pushUndoStop();
       var finalHead, text;
       var vim = cm.state.vim;
       if (!vim.visualBlock) {
