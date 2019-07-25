@@ -35,7 +35,7 @@ export default class VimStatusBar {
       return;
     }
 
-    this.setInnerHtml_(secInfoNode, text);
+    this.setInnerHtml_(this.secInfoNode, text);
     const input = this.secInfoNode.querySelector('input');
 
     if (input) {
