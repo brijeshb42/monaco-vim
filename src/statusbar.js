@@ -1,5 +1,5 @@
 export default class VimStatusBar {
-  constructor(node, editor) {
+  constructor(node, editor, sanitizer = null) {
     this.node = node;
     this.modeInfoNode = document.createElement('span');
     this.secInfoNode = document.createElement('span');
@@ -13,6 +13,7 @@ export default class VimStatusBar {
     this.node.appendChild(this.keyInfoNode);
     this.toggleVisibility(false);
     this.editor = editor;
+    this.sanitizer = sanitizer;
   }
 
   setMode(ev) {
@@ -34,7 +35,7 @@ export default class VimStatusBar {
       return;
     }
 
-    this.secInfoNode.innerHTML = text;
+    this.setInnerHtml_(secInfoNode, text);
     const input = this.secInfoNode.querySelector('input');
 
     if (input) {
@@ -88,6 +89,10 @@ export default class VimStatusBar {
       this.editor.focus();
     }
   };
+
+  clear = () => {
+    this.setInnerHtml_(this, '');
+  }
 
   inputKeyUp = (e) => {
     const { options } = this.input;
@@ -146,10 +151,22 @@ export default class VimStatusBar {
 
   showNotification(text) {
     const sp = document.createElement('span');
-    sp.innerHTML = text;
+    this.setInnerHtml_(sp, text);
     this.notifNode.textContent = sp.textContent;
     this.notifTimeout = setTimeout(() => {
       this.notifNode.textContent = '';
     }, 5000);
+  }
+
+  setInnerHtml_(element, htmlContents) {
+    if (this.sanitizer) {
+      // Clear out previous contents first.
+      while (element.children.length) {
+        element.removeChild(element.children[0]);
+      }
+      element.appendChild(this.sanitizer(htmlContents));
+    } else {
+      element.innerHTML = htmlContents;
+    }
   }
 }

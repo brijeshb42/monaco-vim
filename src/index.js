@@ -1,7 +1,11 @@
 import { default as VimMode } from './cm/keymap_vim';
 import StatusBar from './statusbar';
 
-export function initVimMode(editor, statusbarNode = null, StatusBarClass = StatusBar) {
+export function initVimMode(
+    editor,
+    statusbarNode = null,
+    StatusBarClass = StatusBar,
+    sanitizer = null) {
   const vimAdapter = new VimMode(editor);
 
   if (!statusbarNode) {
@@ -9,7 +13,7 @@ export function initVimMode(editor, statusbarNode = null, StatusBarClass = Statu
     return vimAdapter;
   }
 
-  const statusBar = new StatusBarClass(statusbarNode, editor);
+  const statusBar = new StatusBarClass(statusbarNode, editor, sanitizer);
   let keyBuffer = '';
 
   vimAdapter.on('vim-mode-change', (mode) => {
@@ -33,7 +37,7 @@ export function initVimMode(editor, statusbarNode = null, StatusBarClass = Statu
   vimAdapter.on('dispose', function() {
     statusBar.toggleVisibility(false);
     statusBar.closeInput();
-    statusbarNode.innerHTML = '';
+    statusbarNode.clear();
   });
 
   statusBar.toggleVisibility(true);
