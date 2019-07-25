@@ -901,8 +901,20 @@ class CMAdapter {
     const matches = model.findMatches(query, false, isRegex, matchCase) || [];
 
     return {
+      getMatches() {return matches;},
       findNext() {return this.find(false);},
       findPrevious() {return this.find(true);},
+      jumpTo(index) {
+        if (!matches || !matches.length) {
+          return false;
+        }
+        var match = matches[index];
+        lastSearch = match.range;
+        context.highlightRanges([lastSearch], 'currentFindMatch');
+        context.highlightRanges(matches.map(m => m.range).filter(r => !r.equalsRange(lastSearch)));
+
+        return lastSearch;
+      },
       find(back) {
         if (!matches || !matches.length) {
           return false;
