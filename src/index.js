@@ -37,7 +37,7 @@ export function initVimMode(
   vimAdapter.on('dispose', function() {
     statusBar.toggleVisibility(false);
     statusBar.closeInput();
-    statusbarNode.clear();
+    statusBar.clear();
   });
 
   statusBar.toggleVisibility(true);
