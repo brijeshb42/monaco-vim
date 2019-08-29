@@ -2251,7 +2251,7 @@ var Vim = function() {
       }
     },
     toggleOverwrite: function(cm) {
-      if (!cm.state.overwrite) {
+      if (!cm.replaceMode) {
         cm.toggleOverwrite(true);
         cm.setOption('keyMap', 'vim-replace');
         CodeMirror.signal(cm, "vim-mode-change", {mode: "replace"});
