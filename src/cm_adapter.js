@@ -336,7 +336,12 @@ class CMAdapter {
       if (cmd) {
         e.preventDefault();
         e.stopPropagation();
-        cmd();
+
+        try {
+          cmd();
+        } catch (err) {
+          console.error(err);
+        }
       }
     }
   }
