@@ -91,7 +91,7 @@ export default class VimStatusBar {
   };
 
   clear = () => {
-    this.setInnerHtml_(this, '');
+    this.setInnerHtml_(this.node, '');
   }
 
   inputKeyUp = (e) => {
