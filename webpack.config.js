@@ -65,11 +65,11 @@ module.exports = (_env, argv) => {
       new MonacoWebpackPlugin(),
     ],
     externals: isProd ? {
-      'monaco-editor': {
+      'monaco-editor/esm/vs/editor/editor.api': {
         root: 'monaco',
-        commonjs: 'monaco-editor',
-        commonjs2: 'monaco-editor',
-        amd: 'vs/editor/editor.main',
+        commonjs: 'monaco-editor/esm/vs/editor/editor.api',
+        commonjs2: 'monaco-editor/esm/vs/editor/editor.api',
+        amd: 'vs/editor/editor.api',
       },
       'monaco-editor/esm/vs/editor/common/controller/cursorTypeOperations': {
         commonjs: 'monaco-editor/esm/vs/editor/common/controller/cursorTypeOperations',
