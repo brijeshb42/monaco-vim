@@ -8,7 +8,7 @@
     "start": "webpack-dev-server --mode development --host=0.0.0.0 --port=8080",
     "clean": "rm -rf lib dist local",
     "dist": "webpack --mode production",
-    "babel": "NODE_ENV=production babel ./src -d lib --ignore 'demo.js'",
+    "babel": "NODE_ENV=production babel ./src -d lib --ignore src/demo.js",
     "build": "npm run clean && npm run babel && npm run dist",
     "local": "mkdir -p local && cp -r lib dist package.json local",
     "prepublishOnly": "npm run build"
@@ -28,21 +28,22 @@
   "author": "Brijesh Bittu <brijesh@bitwiser.in> (http://bitwiser.in/)",
   "license": "MIT",
   "devDependencies": {
-    "babel-cli": "^6.26.0",
-    "babel-core": "^6.26.3",
-    "babel-loader": "^7.1.5",
+    "@babel/cli": "^7.7.0",
+    "@babel/core": "^7.7.2",
+    "@babel/plugin-syntax-dynamic-import": "^7.2.0",
+    "@babel/preset-env": "^7.7.1",
+    "babel-loader": "^8.0.6",
     "babel-plugin-transform-class-properties": "^6.24.1",
-    "babel-preset-env": "^1.7.0",
-    "css-loader": "^1.0.0",
+    "css-loader": "^3.2.0",
     "html-webpack-plugin": "^3.2.0",
-    "monaco-editor": "0.17.1",
+    "monaco-editor": "0.18.1",
     "monaco-editor-webpack-plugin": "^1.7.0",
-    "style-loader": "^0.22.1",
-    "webpack": "^4.16.5",
-    "webpack-cli": "^3.1.0",
-    "webpack-dev-server": "^3.1.5"
+    "style-loader": "^1.0.0",
+    "webpack": "^4.41.2",
+    "webpack-cli": "^3.3.10",
+    "webpack-dev-server": "^3.9.0"
   },
   "peerDependencies": {
-    "monaco-editor": "^0.14.0 || ^0.15.0 || ^0.16.0 || ^0.17.0"
+    "monaco-editor": "^0.14.0 || ^0.15.0 || ^0.16.0 || ^0.17.0 || ^0.18.0"
   }
 }
