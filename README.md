@@ -91,4 +91,24 @@ See [demo.js](https://github.com/brijeshb42/monaco-vim/tree/master/src/demo.js) 
 
 If you would like to customize the statusbar or provide your own implementation, see `initVimMode`'s implementation in [src/index.js](https://github.com/brijeshb42/monaco-vim/tree/master/src/index.js).
 
+### Adding custom key bindings
+
+Actual vim implementation can be imported as:
+
+```js
+import { VimMode } from 'monaco-vim';
+```
+
+#### Defining ex mode command
+
+```js
+// VimMode.Vim.defineEx(name, shorthand, callback);
+VimMode.Vim.defineEx('write', 'w', function() {
+  // your own implementation on what you want to do when :w is pressed
+  localStorage.setItem('editorvalue', editor.getValue());
+});
+```
+
+For advanced usage, refer [codemirror](https://github.com/codemirror/CodeMirror/issues/2840#issuecomment-58125831).  `CodeMirror.Vim` is available as `VimMode.Vim`;
+
 This implementaion of VIM is a layer between Codemirror's VIM keybindings and monaco. There may be issues in some of the keybindings, especially those that expect extra input like the Ex commands or search/replace. If you encounter such bugs, create a new [issue](https://github.com/brijeshb42/monaco-vim/issues). PRs to resolve those are welcome too.
