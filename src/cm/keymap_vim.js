@@ -1577,6 +1577,7 @@ var Vim = function() {
             anchor: curStart,
             head: curEnd
           }, mode);
+
           if (linewise) {
             var ranges = cmSel.ranges;
             if (mode == 'block') {
@@ -3009,7 +3010,7 @@ var Vim = function() {
     sel = sel || vim.sel;
     var mode = mode ||
       vim.visualLine ? 'line' : vim.visualBlock ? 'block' : 'char';
-    var cmSel = makeCmSelection(cm, sel, mode);
+    var cmSel = makeCmSelection(cm, sel, mode, vim.visualMode && mode === 'char');
     cm.setSelections(cmSel.ranges, cmSel.primary);
     updateFakeCursor(cm);
   }
