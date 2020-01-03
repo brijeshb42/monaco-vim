@@ -14,6 +14,11 @@ import { TypeOperations } from 'monaco-editor/esm/vs/editor/common/controller/cu
 const VerticalRevealType = {
   Bottom: 4,
 };
+const EditorOptConstants = {
+  readOnly: 65,
+  cursorWidth: 20,
+  fontInfo: 32,
+};
 
 const { userAgent, platform } = window.navigator;
 const edge = /Edge\/(\d+)/.exec(userAgent);
@@ -446,15 +451,34 @@ class CMAdapter {
     }
   }
 
+  getConfiguration() {
+    const { editor } = this;
+
+    if (typeof editor.getConfiguration === 'function') {
+      return editor.getConfiguration();
+    }
+
+    return {
+      readOnly: editor.getOption(EditorOptConstants.readOnly),
+      viewInfo: {
+        cursorWidth: editor.getOption(EditorOptConstants.cursorWidth),
+      },
+      fontInfo: editor.getOption(EditorOptConstants.fontInfo),
+    };
+  }
+
   getOption(key) {
     if (key === 'readOnly') {
-      return this.editor.getConfiguration().readOnly;
+      return this.getConfiguration().readOnly;
     } else if (key === 'firstLineNumber') {
       return this.firstLine() + 1;
     } else if (key === 'indentWithTabs') {
       return !this.editor.getModel().getOptions().insertSpaces;
     } else {
-      return this.editor.getRawConfiguration()[key]
+      if (typeof this.editor.getConfiguration === 'function') {
+        return this.editor.getRawConfiguration()[key];
+      }
+      return this.editor.getRawOptions()[key];
     }
     return this.state[key];
   }
@@ -757,7 +781,7 @@ class CMAdapter {
 
   enterVimMode(toVim = true) {
     this.ctxInsert.set(false);
-    const config = this.editor.getConfiguration();
+    const config = this.getConfiguration();
     this.initialCursorWidth = config.viewInfo.cursorWidth || 0;
 
     this.editor.updateOptions({
@@ -824,7 +848,7 @@ class CMAdapter {
 
     if (unit === 'page') {
       const editorHeight = editor.getLayoutInfo().height;
-      const lineHeight = editor.getConfiguration().fontInfo.lineHeight;
+      const lineHeight = this.getConfiguration().fontInfo.lineHeight;
       finalAmount = finalAmount * Math.floor(editorHeight / lineHeight);
       finalUnit = 'line';
     }

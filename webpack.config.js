@@ -41,6 +41,9 @@ module.exports = (_env, argv) => {
           },
         },
       }, {
+        test: /\.ttf$/,
+        use: 'file-loader',
+      }, {
         test: /\.css$/,
         // exclude: /node_modules/,
         use: [
