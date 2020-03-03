@@ -14,6 +14,8 @@ import { TypeOperations } from 'monaco-editor/esm/vs/editor/common/controller/cu
 const VerticalRevealType = {
   Bottom: 4,
 };
+
+// for monaco 0.19.x where x < 3
 const EditorOptConstants = {
   readOnly: 65,
   cursorWidth: 20,
@@ -453,17 +455,20 @@ class CMAdapter {
 
   getConfiguration() {
     const { editor } = this;
+    let opts = EditorOptConstants;
 
     if (typeof editor.getConfiguration === 'function') {
       return editor.getConfiguration();
+    } else if ('EditorOption' in monacoEditor) { // for monaco 0.19.3 onwards
+      opts = monacoEditor.EditorOption;
     }
 
     return {
-      readOnly: editor.getOption(EditorOptConstants.readOnly),
+      readOnly: editor.getOption(opts.readOnly),
       viewInfo: {
-        cursorWidth: editor.getOption(EditorOptConstants.cursorWidth),
+        cursorWidth: editor.getOption(opts.cursorWidth),
       },
-      fontInfo: editor.getOption(EditorOptConstants.fontInfo),
+      fontInfo: editor.getOption(opts.fontInfo),
     };
   }
 
