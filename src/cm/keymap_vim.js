@@ -343,6 +343,10 @@ var Vim = function() {
       // Keypress character binding of format "'a'"
       return key.charAt(1);
     }
+    if (key == 'AltGraph') {
+      //Handle AltGr character
+      return false;
+    }
     var pieces = key.split(/-(?!$)/);
     var lastPiece = pieces[pieces.length - 1];
     if (pieces.length == 1 && pieces[0].length == 1) {
