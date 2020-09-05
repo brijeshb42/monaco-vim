@@ -1,6 +1,6 @@
 {
   "name": "monaco-vim",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Vim keybindings for monaco-editor",
   "main": "./lib/index.js",
   "scripts": {
