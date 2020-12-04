@@ -257,10 +257,10 @@ class CMAdapter {
 
   static commands = {
     redo: function(cm) {
-      cm.triggerEditorAction('redo');
+      cm.editor.getModel().redo();
     },
     undo: function(cm) {
-      cm.triggerEditorAction('undo');
+      cm.editor.getModel().undo();
     },
     newlineAndIndent: function(cm) {
       cm.triggerEditorAction('editor.action.insertLineAfter');
