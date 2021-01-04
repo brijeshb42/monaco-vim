@@ -1104,13 +1104,20 @@ class CMAdapter {
 
   indentLine(line, indentRight = true) {
     const { editor } = this
-    const cursors = editor._getCursors();
+    let cursorConfig;
+    if (editor._getViewModel) {
+      // Monaco >= 0.21.x
+      cursorConfig = editor._getViewModel().cursorConfig;
+    } else {
+      // Monaco <= 0.20.x
+      cursorConfig = editor._getCursors().context.config;
+    }
     const pos = new Position(line + 1, 1);
     const sel = Selection.fromPositions(pos, pos);
     // no other way than to use internal apis to preserve the undoStack for a batch of indents
     editor.executeCommands(
       `editor.action.${indentRight ? 'indent' : 'outdent'}Lines`,
-      TypeOperations[indentRight ? 'indent' : 'outdent'](cursors.context.config, this.editor.getModel(), [sel]),
+      TypeOperations[indentRight ? 'indent' : 'outdent'](cursorConfig, this.editor.getModel(), [sel]),
     );
   }
 
