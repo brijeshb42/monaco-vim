@@ -158,7 +158,7 @@ class Marker {
 
 function monacoToCmKey(e, skip = false) {
   let addQuotes = true;
-  let keyName = monaco.KeyCode[e.keyCode];
+  let keyName = KeyCode[e.keyCode];
 
   if (e.key) {
     keyName = e.key;
