@@ -1,6 +1,6 @@
 {
   "name": "monaco-vim",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "description": "Vim keybindings for monaco-editor",
   "main": "./lib/index.js",
   "scripts": {
@@ -45,6 +45,6 @@
     "webpack-dev-server": "^3.9.0"
   },
   "peerDependencies": {
-    "monaco-editor": "^0.14.0 || ^0.15.0 || ^0.16.0 || ^0.17.0 || ^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.22.0"
+    "monaco-editor": "^0.14.0 || ^0.15.0 || ^0.16.0 || ^0.17.0 || ^0.18.0 || ^0.19.0 || ^0.20.0 || ^0.21.0 || ^0.23.0"
   }
 }
