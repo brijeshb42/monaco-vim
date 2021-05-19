@@ -228,6 +228,7 @@ class CMAdapter {
       }
     }
   };
+  static matchingBrackets = {"(": ")>", ")": "(<", "[": "]>", "]": "[<", "{": "}>", "}": "{<", "<": ">>", ">": "<<"};
   static isWordChar = isWordCharBasic;
   static keyName = monacoToCmKey;
   static StringStream = StringStream;
@@ -1056,42 +1057,45 @@ class CMAdapter {
     this.editor.setPosition(new Position(pos.lineNumber, pos.column + units));
   }
 
-  /**
-   * Uses internal apis which not sure why is internal
-   */
   scanForBracket(pos, dir, dd, config) {
-    const mPos = toMonacoPos(pos);
+    const { bracketRegex } = config;
+    let mPos = toMonacoPos(pos);
     const model = this.editor.getModel();
-    let range = model.matchBracket(mPos);
 
-    if (!range || range.length !== 2) {
-      const bracket = '{([';
-      for(let i=0; i<bracket.length; i++) {
-        const bracketRange = model.findMatchingBracketUp(bracket[i], mPos);
+    const searchFunc = (dir === -1 ? model.findPreviousMatch : model.findNextMatch).bind(model);
+    const stack = [];
+    let iterations = 0;
 
-        if (bracketRange) {
-          range = model.matchBracket(bracketRange.getEndPosition());
-          break;
-        }
+    while (true) {
+      if (iterations > 10) {
+        // Searched too far, give up.
+        return undefined;
       }
+
+      const match = searchFunc(bracketRegex.source, mPos, true, true, null, true);
+      const thisBracket = match.matches[0];
+
+      if (match === undefined) {
+        return undefined;
+      }
+
+      const matchingBracket = CMAdapter.matchingBrackets[thisBracket];
+
+      if (matchingBracket && (matchingBracket.charAt(1) === ">") == (dir > 0)) {
+        stack.push(thisBracket);
+      } else if (stack.length === 0) {
+        const res = match.range.getStartPosition();
+
+        return {
+          pos: toCmPos(res),
+        };
+      } else {
+        stack.pop();
+      }
+
+      mPos = model.getPositionAt(model.getOffsetAt(match.range.getStartPosition()) + dir);
+      iterations += 1;
     }
-
-    if (!range || range.length !== 2) {
-      return null;
-    }
-
-    let res;
-
-    if (dir === -1) {
-      res = range[1].getStartPosition();
-    } else {
-      res = range[0].getStartPosition();
-    }
-
-    return {
-      pos: toCmPos(res),
-      ch: model.getValueInRange(dir === -1 ? range[0] : range[1]),
-    };
   }
 
   indexFromPos(pos) {
