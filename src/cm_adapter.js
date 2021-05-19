@@ -965,7 +965,7 @@ class CMAdapter {
             return false;
           }
         } else {
-          const pos = lastSearch ? lastSearch.getEndPosition() : monacoPos;
+          const pos = lastSearch ? model.getPositionAt(model.getOffsetAt(lastSearch.getStartPosition()) + 1) : monacoPos;
           match = model.findNextMatch(query, pos, isRegex, matchCase);
           if (!match || !pos.isBeforeOrEqual(match.range.getStartPosition())) {
             return false;

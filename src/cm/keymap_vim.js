@@ -4846,6 +4846,7 @@ var Vim = function() {
       }
       var startPos = clipCursorToContent(cm, Pos(lineStart, 0));
       var cursor = cm.getSearchCursor(query, startPos);
+      cm.pushUndoStop();
       doReplace(cm, confirm, global, lineStart, lineEnd, cursor, query, replacePart, params.callback);
     },
     redo: CodeMirror.commands.redo,
@@ -4951,37 +4952,20 @@ var Vim = function() {
     var done = false;
     var lastPos = searchCursor.from();
     function replaceAll() {
-      var matches = searchCursor.getMatches();
-      var matchesLength = matches.length;
-      cm.operation(function(matches, matchesLength) {
-        for (var i = matchesLength - 1; i >= 0; i--) {
+      cm.operation(function() {
+        while (!done) {
           replace();
-          replaceAllNext(matches, i);
+          next(false);
         }
-        done = true;
         stop();
-      }.bind(this, matches, matchesLength));
+      }.bind(this));
     }
     function replace() {
       var text = cm.getRange(searchCursor.from(), searchCursor.to());
       var newText = text.replace(query, replaceWith);
       searchCursor.replace(newText);
     }
-    function replaceAllNext(matches, index) {
-          var hasNext = searchCursor.jumpTo(index) &&
-            isInRange(searchCursor.from(), lineStart, lineEnd);
-        var match = matches.pop();
-        if (hasNext && !global && lastPos && searchCursor.from().line == lastPos.line) {
-          // Skip over multiple occurrences on the same line when 'global' is
-          // not true.
-          return;
-        }
-        cm.scrollIntoView(searchCursor.from(), 30);
-        lastPos = searchCursor.from();
-        done = false;
-        return;
-    }
-    function next() {
+    function next(shouldSelect) {
       // The below only loops to skip over multiple occurrences on the same
       // line when 'global' is not true.
       while(searchCursor.findNext() &&
@@ -4990,7 +4974,9 @@ var Vim = function() {
           continue;
         }
         cm.scrollIntoView(searchCursor.from(), 30);
-        cm.setSelection(searchCursor.from(), searchCursor.to());
+        if (shouldSelect) {
+          cm.setSelection(searchCursor.from(), searchCursor.to());
+        }
         lastPos = searchCursor.from();
         done = false;
         return;
@@ -5045,7 +5031,7 @@ var Vim = function() {
     }
 
     // Actually do replace.
-    next();
+    next(true);
     if (done) {
       showConfirm(cm, 'No matches for ' + query.source);
       return;
