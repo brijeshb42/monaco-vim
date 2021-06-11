@@ -9,7 +9,7 @@ import {
   Selection,
   SelectionDirection,
   editor as monacoEditor,
-} from 'monaco-editor';
+} from 'monaco-editor/esm/vs/editor/editor.api';
 import { TypeOperations } from 'monaco-editor/esm/vs/editor/common/controller/cursorTypeOperations';
 const VerticalRevealType = {
   Bottom: 4,
