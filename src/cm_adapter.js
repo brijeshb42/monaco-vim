@@ -178,6 +178,9 @@ function monacoToCmKey(e, skip = false) {
       skipOnlyShiftCheck = true;
       key = 'Esc';
       break;
+    case KeyCode.Space:
+      skipOnlyShiftCheck = true;
+      break;
   }
 
   if (keyName.startsWith('KEY_')) {
