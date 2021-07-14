@@ -859,7 +859,7 @@ class CMAdapter {
       finalUnit = 'line';
     }
 
-    if (unit === 'line') {
+    if (finalUnit === 'line') {
       pos.lineNumber += finalAmount;
     }
 
