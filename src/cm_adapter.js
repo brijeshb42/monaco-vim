@@ -590,7 +590,16 @@ class CMAdapter {
   }
 
   getSelection() {
-    return this.editor.getModel().getValueInRange(this.editor.getSelection());
+    var list=[]
+    var editor=this.editor
+    var vim = this.state.vim
+    editor.getSelections().map(function (sel) {
+      if(vim.visualBlock) {
+        sel.endColumn+=1
+      }
+      list.push(editor.getModel().getValueInRange(sel))
+    });
+    return list.join("\n")
   }
 
   replaceRange(text, start, end) {
@@ -670,7 +679,6 @@ class CMAdapter {
     });
 
     if (!primIndex) {
-      sels.reverse();
     } else if (sels[primIndex]) {
       sels.push(sels.splice(primIndex, 1)[0]);
     }
