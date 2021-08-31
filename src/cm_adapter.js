@@ -594,9 +594,6 @@ class CMAdapter {
     var editor=this.editor
     var vim = this.state.vim
     editor.getSelections().map(function (sel) {
-      if(vim.visualBlock) {
-        sel.endColumn+=1
-      }
       list.push(editor.getModel().getValueInRange(sel))
     });
     return list.join("\n")
