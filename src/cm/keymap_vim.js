@@ -1,13 +1,13 @@
 /* eslint-disable */
 
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
-// Distributed under an MIT license: http://codemirror.net/LICENSE
+// Distributed under an MIT license: https://codemirror.net/LICENSE
 
 // Parts of the original code has been modified to work with monaco
 
 /**
  * Supported keybindings:
- *   Too many to list. Refer to defaultKeyMap below.
+ *   Too many to list. Refer to defaultKeymap below.
  *
  * Supported Ex commands:
  *   Refer to defaultExCommandMap below.
@@ -49,6 +49,7 @@ var defaultKeymap = [
   { keys: '<Down>', type: 'keyToKey', toKeys: 'j' },
   { keys: '<Space>', type: 'keyToKey', toKeys: 'l' },
   { keys: '<BS>', type: 'keyToKey', toKeys: 'h', context: 'normal'},
+  { keys: '<Del>', type: 'keyToKey', toKeys: 'x', context: 'normal'},
   { keys: '<C-Space>', type: 'keyToKey', toKeys: 'W' },
   { keys: '<C-BS>', type: 'keyToKey', toKeys: 'B', context: 'normal' },
   { keys: '<S-Space>', type: 'keyToKey', toKeys: 'w' },
@@ -129,6 +130,7 @@ var defaultKeymap = [
   { keys: 'd', type: 'operator', operator: 'delete' },
   { keys: 'y', type: 'operator', operator: 'yank' },
   { keys: 'c', type: 'operator', operator: 'change' },
+  { keys: '=', type: 'operator', operator: 'indentAuto' },
   { keys: '>', type: 'operator', operator: 'indent', operatorArgs: { indentRight: true }},
   { keys: '<', type: 'operator', operator: 'indent', operatorArgs: { indentRight: false }},
   { keys: 'g~', type: 'operator', operator: 'changeCase' },
@@ -148,6 +150,8 @@ var defaultKeymap = [
   { keys: '~', type: 'operatorMotion', operator: 'changeCase', motion: 'moveByCharacters', motionArgs: { forward: true }, operatorArgs: { shouldMoveCursor: true }, context: 'normal'},
   { keys: '~', type: 'operator', operator: 'changeCase', context: 'visual'},
   { keys: '<C-w>', type: 'operatorMotion', operator: 'delete', motion: 'moveByWords', motionArgs: { forward: false, wordEnd: false }, context: 'insert' },
+  //ignore C-w in normal mode
+  { keys: '<C-w>', type: 'idle', context: 'normal' },
   // Actions
   { keys: '<C-i>', type: 'action', action: 'jumpListWalk', actionArgs: { forward: true }},
   { keys: '<C-o>', type: 'action', action: 'jumpListWalk', actionArgs: { forward: false }},
@@ -157,7 +161,9 @@ var defaultKeymap = [
   { keys: 'A', type: 'action', action: 'enterInsertMode', isEdit: true, actionArgs: { insertAt: 'eol' }, context: 'normal' },
   { keys: 'A', type: 'action', action: 'enterInsertMode', isEdit: true, actionArgs: { insertAt: 'endOfSelectedArea' }, context: 'visual' },
   { keys: 'i', type: 'action', action: 'enterInsertMode', isEdit: true, actionArgs: { insertAt: 'inplace' }, context: 'normal' },
+  { keys: 'gi', type: 'action', action: 'enterInsertMode', isEdit: true, actionArgs: { insertAt: 'lastEdit' }, context: 'normal' },
   { keys: 'I', type: 'action', action: 'enterInsertMode', isEdit: true, actionArgs: { insertAt: 'firstNonBlank'}, context: 'normal' },
+  { keys: 'gI', type: 'action', action: 'enterInsertMode', isEdit: true, actionArgs: { insertAt: 'bol'}, context: 'normal' },
   { keys: 'I', type: 'action', action: 'enterInsertMode', isEdit: true, actionArgs: { insertAt: 'startOfSelectedArea' }, context: 'visual' },
   { keys: 'o', type: 'action', action: 'newLineAndEnterInsertMode', isEdit: true, interlaceInsertRepeat: true, actionArgs: { after: true }, context: 'normal' },
   { keys: 'O', type: 'action', action: 'newLineAndEnterInsertMode', isEdit: true, interlaceInsertRepeat: true, actionArgs: { after: false }, context: 'normal' },
@@ -167,13 +173,15 @@ var defaultKeymap = [
   { keys: '<C-q>', type: 'action', action: 'toggleVisualMode', actionArgs: { blockwise: true }},
   { keys: 'gv', type: 'action', action: 'reselectLastSelection' },
   { keys: 'J', type: 'action', action: 'joinLines', isEdit: true },
+  { keys: 'gJ', type: 'action', action: 'joinLines', actionArgs: { keepSpaces: true }, isEdit: true },
   { keys: 'p', type: 'action', action: 'paste', isEdit: true, actionArgs: { after: true, isEdit: true }},
   { keys: 'P', type: 'action', action: 'paste', isEdit: true, actionArgs: { after: false, isEdit: true }},
   { keys: 'r<character>', type: 'action', action: 'replace', isEdit: true },
   { keys: '@<character>', type: 'action', action: 'replayMacro' },
   { keys: 'q<character>', type: 'action', action: 'enterMacroRecordMode' },
   // Handle Replace-mode as a special case of insert mode.
-  { keys: 'R', type: 'action', action: 'enterInsertMode', isEdit: true, actionArgs: { replace: true }},
+  { keys: 'R', type: 'action', action: 'enterInsertMode', isEdit: true, actionArgs: { replace: true }, context: 'normal'},
+  { keys: 'R', type: 'operator', operator: 'change', operatorArgs: { linewise: true, fullLine: true }, context: 'visual', exitVisualBlock: true},
   { keys: 'u', type: 'action', action: 'undo', context: 'normal' },
   { keys: 'u', type: 'operator', operator: 'changeCase', operatorArgs: {toLower: true}, context: 'visual', isEdit: true },
   { keys: 'U', type: 'operator', operator: 'changeCase', operatorArgs: {toLower: false}, context: 'visual', isEdit: true },
@@ -204,13 +212,14 @@ var defaultKeymap = [
   // Ex command
   { keys: ':', type: 'ex' }
 ];
+var defaultKeymapLength = defaultKeymap.length;
 
 /**
- * Ex commands
- * Care must be taken when adding to the default Ex command map. For any
- * pair of commands that have a shared prefix, at least one of their
- * shortNames must not match the prefix of the other command.
- */
+  * Ex commands
+  * Care must be taken when adding to the default Ex command map. For any
+  * pair of commands that have a shared prefix, at least one of their
+  * shortNames must not match the prefix of the other command.
+  */
 var defaultExCommandMap = [
   { name: 'colorscheme', shortName: 'colo' },
   { name: 'map' },
@@ -222,7 +231,6 @@ var defaultExCommandMap = [
   { name: 'undo', shortName: 'u' },
   { name: 'redo', shortName: 'red' },
   { name: 'set', shortName: 'se' },
-  { name: 'set', shortName: 'se' },
   { name: 'setlocal', shortName: 'setl' },
   { name: 'setglobal', shortName: 'setg' },
   { name: 'sort', shortName: 'sor' },
@@ -231,6 +239,7 @@ var defaultExCommandMap = [
   { name: 'yank', shortName: 'y' },
   { name: 'delmarks', shortName: 'delm' },
   { name: 'registers', shortName: 'reg', excludeFromCommandHistory: true },
+  { name: 'vglobal', shortName: 'v' },
   { name: 'global', shortName: 'g' }
 ];
 
@@ -741,6 +750,44 @@ var Vim = function() {
     },
     unmap: function(lhs, ctx) {
       exCommandDispatcher.unmap(lhs, ctx);
+    },
+    // Non-recursive map function.
+    // NOTE: This will not create mappings to key maps that aren't present
+    // in the default key map. See TODO at bottom of function.
+    noremap: function(lhs, rhs, ctx) {
+      function toCtxArray(ctx) {
+        return ctx ? [ctx] : ['normal', 'insert', 'visual'];
+      }
+      var ctxsToMap = toCtxArray(ctx);
+      // Look through all actual defaults to find a map candidate.
+      var actualLength = defaultKeymap.length, origLength = defaultKeymapLength;
+      for (var i = actualLength - origLength;
+           i < actualLength && ctxsToMap.length;
+           i++) {
+        var mapping = defaultKeymap[i];
+        // Omit mappings that operate in the wrong context(s) and those of invalid type.
+        if (mapping.keys == rhs &&
+            (!ctx || !mapping.context || mapping.context === ctx) &&
+            mapping.type.substr(0, 2) !== 'ex' &&
+            mapping.type.substr(0, 3) !== 'key') {
+          // Make a shallow copy of the original keymap entry.
+          var newMapping = {};
+          for (var key in mapping) {
+            newMapping[key] = mapping[key];
+          }
+          // Modify it point to the new mapping with the proper context.
+          newMapping.keys = lhs;
+          if (ctx && !newMapping.context) {
+            newMapping.context = ctx;
+          }
+          // Add it to the keymap with a higher priority than the original.
+          this._mapCommand(newMapping);
+          // Record the mapped contexts as complete.
+          var mappedCtxs = toCtxArray(mapping.context);
+          ctxsToMap = ctxsToMap.filter(function(el) { return mappedCtxs.indexOf(el) === -1; });
+        }
+      }
+      // TODO: Create non-recursive keyToKey mappings for the unmapped contexts once those exist.
     },
     // TODO: Expose setOption and getOption as instance methods. Need to decide how to namespace
     // them, or somehow make them work with the existing CodeMirror setOption/getOption API.
@@ -2121,6 +2168,10 @@ var Vim = function() {
         }
       }
       cm.pushUndoStop();
+      return motions.moveToFirstNonWhiteSpaceCharacter(cm, ranges[0].anchor);
+    },
+    indentAuto: function(cm, _args, ranges) {
+      cm.execCommand("indentAuto");
       return motions.moveToFirstNonWhiteSpaceCharacter(cm, ranges[0].anchor);
     },
     changeCase: function(cm, args, ranges, oldAnchor, newHead) {
