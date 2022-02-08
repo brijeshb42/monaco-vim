@@ -3,14 +3,13 @@
  */
 import {
   KeyCode,
-  KeyMod,
   Range,
   Position,
   Selection,
   SelectionDirection,
   editor as monacoEditor,
-} from 'monaco-editor';
-import { TypeOperations } from 'monaco-editor/esm/vs/editor/common/controller/cursorTypeOperations';
+} from "monaco-editor";
+import { TypeOperations } from "monaco-editor/esm/vs/editor/common/cursor/cursorTypeOperations";
 const VerticalRevealType = {
   Bottom: 4,
 };
@@ -22,16 +21,16 @@ const EditorOptConstants = {
   fontInfo: 32,
 };
 
-const { userAgent, platform } = window.navigator;
-const edge = /Edge\/(\d+)/.exec(userAgent);
-const ios = !edge && /AppleWebKit/.test(userAgent) && /Mobile\/\w+/.test(userAgent);
-const mac = ios || /Mac/.test(platform);
-
-const nonASCIISingleCaseWordChar = /[\u00df\u0587\u0590-\u05f4\u0600-\u06ff\u3040-\u309f\u30a0-\u30ff\u3400-\u4db5\u4e00-\u9fcc\uac00-\ud7af]/;
+const nonASCIISingleCaseWordChar =
+  /[\u00df\u0587\u0590-\u05f4\u0600-\u06ff\u3040-\u309f\u30a0-\u30ff\u3400-\u4db5\u4e00-\u9fcc\uac00-\ud7af]/;
 
 function isWordCharBasic(ch) {
-  return /\w/.test(ch) || ch > "\x80" &&
-    (ch.toUpperCase() != ch.toLowerCase() || nonASCIISingleCaseWordChar.test(ch))
+  return (
+    /\w/.test(ch) ||
+    (ch > "\x80" &&
+      (ch.toUpperCase() != ch.toLowerCase() ||
+        nonASCIISingleCaseWordChar.test(ch)))
+  );
 }
 
 function Pos(line, column) {
@@ -48,22 +47,30 @@ function signal(cm, signal, args) {
 }
 
 function dummy(key) {
-  return function() {
+  return function () {
     // console.log(key, 'dummy function called with', Array.prototype.slice.call(arguments));
-  }
+  };
 }
 
 let doFold, noFold;
 
 if (String.prototype.normalize) {
-  doFold = function(str) { return str.normalize("NFD").toLowerCase() }
-  noFold = function(str) { return str.normalize("NFD") }
+  doFold = function (str) {
+    return str.normalize("NFD").toLowerCase();
+  };
+  noFold = function (str) {
+    return str.normalize("NFD");
+  };
 } else {
-  doFold = function(str) { return str.toLowerCase() }
-  noFold = function(str) { return str }
+  doFold = function (str) {
+    return str.toLowerCase();
+  };
+  noFold = function (str) {
+    return str;
+  };
 }
 
-var StringStream = function(string, tabSize) {
+var StringStream = function (string, tabSize) {
   this.pos = this.start = 0;
   this.string = string;
   this.tabSize = tabSize || 8;
@@ -72,44 +79,61 @@ var StringStream = function(string, tabSize) {
 };
 
 StringStream.prototype = {
-  eol: function() {return this.pos >= this.string.length;},
-  sol: function() {return this.pos == this.lineStart;},
-  peek: function() {return this.string.charAt(this.pos) || undefined;},
-  next: function() {
-    if (this.pos < this.string.length)
-      return this.string.charAt(this.pos++);
+  eol: function () {
+    return this.pos >= this.string.length;
   },
-  eat: function(match) {
+  sol: function () {
+    return this.pos == this.lineStart;
+  },
+  peek: function () {
+    return this.string.charAt(this.pos) || undefined;
+  },
+  next: function () {
+    if (this.pos < this.string.length) return this.string.charAt(this.pos++);
+  },
+  eat: function (match) {
     var ch = this.string.charAt(this.pos);
     if (typeof match == "string") var ok = ch == match;
     else var ok = ch && (match.test ? match.test(ch) : match(ch));
-    if (ok) {++this.pos; return ch;}
+    if (ok) {
+      ++this.pos;
+      return ch;
+    }
   },
-  eatWhile: function(match) {
+  eatWhile: function (match) {
     var start = this.pos;
-    while (this.eat(match)){}
+    while (this.eat(match)) {}
     return this.pos > start;
   },
-  eatSpace: function() {
+  eatSpace: function () {
     var start = this.pos;
     while (/[\s\u00a0]/.test(this.string.charAt(this.pos))) ++this.pos;
     return this.pos > start;
   },
-  skipToEnd: function() {this.pos = this.string.length;},
-  skipTo: function(ch) {
+  skipToEnd: function () {
+    this.pos = this.string.length;
+  },
+  skipTo: function (ch) {
     var found = this.string.indexOf(ch, this.pos);
-    if (found > -1) {this.pos = found; return true;}
+    if (found > -1) {
+      this.pos = found;
+      return true;
+    }
   },
-  backUp: function(n) {this.pos -= n;},
-  column: function() {
+  backUp: function (n) {
+    this.pos -= n;
+  },
+  column: function () {
     throw "not implemented";
   },
-  indentation: function() {
+  indentation: function () {
     throw "not implemented";
   },
-  match: function(pattern, consume, caseInsensitive) {
+  match: function (pattern, consume, caseInsensitive) {
     if (typeof pattern == "string") {
-      var cased = function(str) {return caseInsensitive ? str.toLowerCase() : str;};
+      var cased = function (str) {
+        return caseInsensitive ? str.toLowerCase() : str;
+      };
       var substr = this.string.substr(this.pos, pattern.length);
       if (cased(substr) == cased(pattern)) {
         if (consume !== false) this.pos += pattern.length;
@@ -122,12 +146,17 @@ StringStream.prototype = {
       return match;
     }
   },
-  current: function(){return this.string.slice(this.start, this.pos);},
-  hideFirstChars: function(n, inner) {
+  current: function () {
+    return this.string.slice(this.start, this.pos);
+  },
+  hideFirstChars: function (n, inner) {
     this.lineStart += n;
-    try { return inner(); }
-    finally { this.lineStart -= n; }
-  }
+    try {
+      return inner();
+    } finally {
+      this.lineStart -= n;
+    }
+  },
 };
 
 function toCmPos(pos) {
@@ -176,16 +205,16 @@ function monacoToCmKey(e, skip = false) {
       return key;
     case KeyCode.Escape:
       skipOnlyShiftCheck = true;
-      key = 'Esc';
+      key = "Esc";
       break;
   }
 
-  if (keyName.startsWith('KEY_')) {
+  if (keyName.startsWith("KEY_")) {
     key = keyName[keyName.length - 1].toLowerCase();
-  } else if (keyName.endsWith('Arrow')) {
+  } else if (keyName.endsWith("Arrow")) {
     skipOnlyShiftCheck = true;
     key = keyName.substr(0, keyName.length - 5);
-  } else if (keyName.startsWith('US_')) {
+  } else if (keyName.startsWith("US_")) {
     key = e.browserEvent.key;
   }
 
@@ -216,23 +245,32 @@ function monacoToCmKey(e, skip = false) {
 class CMAdapter {
   static Pos = Pos;
   static signal = signal;
-  static on = dummy('on');
-  static off = dummy('off');
-  static addClass = dummy('addClass');
-  static rmClass = dummy('rmClass');
-  static defineOption = dummy('defineOption');
+  static on = dummy("on");
+  static off = dummy("off");
+  static addClass = dummy("addClass");
+  static rmClass = dummy("rmClass");
+  static defineOption = dummy("defineOption");
   static keyMap = {
-    'default': function(key) {
-      return function(cm) {
+    default: function (key) {
+      return function (cm) {
         return true;
-      }
-    }
+      };
+    },
   };
-  static matchingBrackets = {"(": ")>", ")": "(<", "[": "]>", "]": "[<", "{": "}>", "}": "{<", "<": ">>", ">": "<<"};
+  static matchingBrackets = {
+    "(": ")>",
+    ")": "(<",
+    "[": "]>",
+    "]": "[<",
+    "{": "}>",
+    "}": "{<",
+    "<": ">>",
+    ">": "<<",
+  };
   static isWordChar = isWordCharBasic;
   static keyName = monacoToCmKey;
   static StringStream = StringStream;
-  static e_stop = function(e) {
+  static e_stop = function (e) {
     if (e.stopPropagation) {
       e.stopPropagation();
     } else {
@@ -242,7 +280,7 @@ class CMAdapter {
     return false;
   };
 
-  static e_preventDefault = function(e) {
+  static e_preventDefault = function (e) {
     if (e.preventDefault) {
       e.preventDefault();
 
@@ -257,19 +295,19 @@ class CMAdapter {
   };
 
   static commands = {
-    redo: function(cm) {
+    redo: function (cm) {
       cm.editor.getModel().redo();
     },
-    undo: function(cm) {
+    undo: function (cm) {
       cm.editor.getModel().undo();
     },
-    newlineAndIndent: function(cm) {
-      cm.triggerEditorAction('editor.action.insertLineAfter');
-    }
+    newlineAndIndent: function (cm) {
+      cm.triggerEditorAction("editor.action.insertLineAfter");
+    },
   };
 
   static lookupKey = function lookupKey(key, map, handle) {
-    if (typeof map === 'string') {
+    if (typeof map === "string") {
       map = CMAdapter.keyMap[map];
     }
     const found = typeof map == "function" ? map(key) : map[key];
@@ -286,9 +324,9 @@ class CMAdapter {
         if (result) return result;
       }
     }
-  }
+  };
 
-  static defineExtension = function(name, fn) {
+  static defineExtension = function (name, fn) {
     CMAdapter.prototype[name] = fn;
   };
 
@@ -303,7 +341,7 @@ class CMAdapter {
     this.attached = false;
     this.statusBar = null;
     this.addLocalListeners();
-    this.ctxInsert = this.editor.createContextKey('insertMode', true);
+    this.ctxInsert = this.editor.createContextKey("insertMode", true);
   }
 
   attach() {
@@ -314,14 +352,14 @@ class CMAdapter {
     this.disposables.push(
       this.editor.onDidChangeCursorPosition(this.handleCursorChange),
       this.editor.onDidChangeModelContent(this.handleChange),
-      this.editor.onKeyDown(this.handleKeyDown),
+      this.editor.onKeyDown(this.handleKeyDown)
     );
   }
 
   handleKeyDown = (e) => {
     // Allow previously registered keydown listeners to handle the event and
     // prevent this extension from also handling it.
-    if (e.browserEvent.defaultPrevented & e.keyCode !== KeyCode.Escape) {
+    if (e.browserEvent.defaultPrevented & (e.keyCode !== KeyCode.Escape)) {
       return;
     }
 
@@ -352,20 +390,25 @@ class CMAdapter {
         }
       }
     }
-  }
+  };
 
   handleReplaceMode(key, e) {
     let fromReplace = false;
     let char = key;
     const pos = this.editor.getPosition();
-    let range = new Range(pos.lineNumber, pos.column, pos.lineNumber, pos.column + 1);
+    let range = new Range(
+      pos.lineNumber,
+      pos.column,
+      pos.lineNumber,
+      pos.column + 1
+    );
     let forceMoveMarkers = true;
 
-    if (key.startsWith('\'')) {
+    if (key.startsWith("'")) {
       char = key[1];
-    } else if (char === 'Enter') {
-      char = '\n';
-    } else if (char === 'Backspace') {
+    } else if (char === "Enter") {
+      char = "\n";
+    } else if (char === "Backspace") {
       const lastItem = this.replaceStack.pop();
 
       if (!lastItem) {
@@ -374,7 +417,12 @@ class CMAdapter {
 
       fromReplace = true;
       char = lastItem;
-      range = new Range(pos.lineNumber, pos.column, pos.lineNumber, pos.column - 1);
+      range = new Range(
+        pos.lineNumber,
+        pos.column,
+        pos.lineNumber,
+        pos.column - 1
+      );
     } else {
       return;
     }
@@ -390,11 +438,13 @@ class CMAdapter {
       this.replaceStack.push(this.editor.getModel().getValueInRange(range));
     }
 
-    this.editor.executeEdits('vim', [{
-      text: char,
-      range,
-      forceMoveMarkers,
-    }]);
+    this.editor.executeEdits("vim", [
+      {
+        text: char,
+        range,
+        forceMoveMarkers,
+      },
+    ]);
 
     if (fromReplace) {
       this.editor.setPosition(range.getStartPosition());
@@ -406,7 +456,7 @@ class CMAdapter {
     const { editor } = this;
     const selection = editor.getSelection();
 
-    if (!this.ctxInsert.get() && e.source === 'mouse' && selection.isEmpty()) {
+    if (!this.ctxInsert.get() && e.source === "mouse" && selection.isEmpty()) {
       const maxCol = editor.getModel().getLineMaxColumn(position.lineNumber);
 
       if (e.position.column === maxCol) {
@@ -415,8 +465,8 @@ class CMAdapter {
       }
     }
 
-    this.dispatch('cursorActivity', this, e);
-  }
+    this.dispatch("cursorActivity", this, e);
+  };
 
   handleChange = (e) => {
     const { changes } = e;
@@ -425,12 +475,13 @@ class CMAdapter {
         acc.push(change.text);
         return acc;
       }, []),
-      origin: '+input'
+      origin: "+input",
     };
-    const curOp = this.curOp = this.curOp || {};
+    const curOp = (this.curOp = this.curOp || {});
 
     if (!curOp.changeHandlers) {
-      curOp.changeHandlers = this.listeners['change'] && this.listeners['change'].slice();
+      curOp.changeHandlers =
+        this.listeners["change"] && this.listeners["change"].slice();
     }
 
     if (this.virtualSelectionMode()) {
@@ -443,13 +494,13 @@ class CMAdapter {
       curOp.lastChange.next = curOp.lastChange = change;
     }
 
-    this.dispatch('change', this, change);
+    this.dispatch("change", this, change);
   };
 
   setOption(key, value) {
     this.state[key] = value;
 
-    if (key === 'theme') {
+    if (key === "theme") {
       monacoEditor.setTheme(value);
     }
   }
@@ -458,9 +509,10 @@ class CMAdapter {
     const { editor } = this;
     let opts = EditorOptConstants;
 
-    if (typeof editor.getConfiguration === 'function') {
+    if (typeof editor.getConfiguration === "function") {
       return editor.getConfiguration();
-    } else if ('EditorOption' in monacoEditor) { // for monaco 0.19.3 onwards
+    } else if ("EditorOption" in monacoEditor) {
+      // for monaco 0.19.3 onwards
       opts = monacoEditor.EditorOption;
     }
 
@@ -474,14 +526,14 @@ class CMAdapter {
   }
 
   getOption(key) {
-    if (key === 'readOnly') {
+    if (key === "readOnly") {
       return this.getConfiguration().readOnly;
-    } else if (key === 'firstLineNumber') {
+    } else if (key === "firstLineNumber") {
       return this.firstLine() + 1;
-    } else if (key === 'indentWithTabs') {
+    } else if (key === "indentWithTabs") {
       return !this.editor.getModel().getOptions().insertSpaces;
     } else {
-      if (typeof this.editor.getConfiguration === 'function') {
+      if (typeof this.editor.getConfiguration === "function") {
         return this.editor.getRawConfiguration()[key];
       }
       return this.editor.getRawOptions()[key];
@@ -495,7 +547,7 @@ class CMAdapter {
       return;
     }
 
-    listeners.forEach(handler => handler(...args));
+    listeners.forEach((handler) => handler(...args));
   }
 
   on(event, handler) {
@@ -512,7 +564,7 @@ class CMAdapter {
       return;
     }
 
-    this.listeners[event] = listeners.filter(l => l !== handler);
+    this.listeners[event] = listeners.filter((l) => l !== handler);
   }
 
   firstLine() {
@@ -533,7 +585,7 @@ class CMAdapter {
 
   getLine(line) {
     if (line < 0) {
-      return '';
+      return "";
     }
     const model = this.editor.getModel();
     const maxLines = model.getLineCount();
@@ -551,7 +603,9 @@ class CMAdapter {
     }
 
     const selDir = selection.getDirection();
-    return (selDir === SelectionDirection.LTR) ? selection.getStartPosition() : selection.getEndPosition();
+    return selDir === SelectionDirection.LTR
+      ? selection.getStartPosition()
+      : selection.getEndPosition();
   }
 
   getHeadForSelection(selection) {
@@ -560,7 +614,9 @@ class CMAdapter {
     }
 
     const selDir = selection.getDirection();
-    return (selDir === SelectionDirection.LTR) ? selection.getEndPosition() : selection.getStartPosition();
+    return selDir === SelectionDirection.LTR
+      ? selection.getEndPosition()
+      : selection.getStartPosition();
   }
 
   getCursor(type = null) {
@@ -573,7 +629,7 @@ class CMAdapter {
 
     if (sel.isEmpty()) {
       pos = sel.getPosition();
-    } else if (type === 'anchor') {
+    } else if (type === "anchor") {
       pos = this.getAnchorForSelection(sel);
     } else {
       pos = this.getHeadForSelection(sel);
@@ -590,23 +646,25 @@ class CMAdapter {
   }
 
   getSelection() {
-    var list=[]
-    var editor=this.editor
-    var vim = this.state.vim
+    var list = [];
+    var editor = this.editor;
+    var vim = this.state.vim;
     editor.getSelections().map(function (sel) {
-      list.push(editor.getModel().getValueInRange(sel))
+      list.push(editor.getModel().getValueInRange(sel));
     });
-    return list.join("\n")
+    return list.join("\n");
   }
 
   replaceRange(text, start, end) {
     const p1 = toMonacoPos(start);
     const p2 = !end ? p1 : toMonacoPos(end);
 
-    this.editor.executeEdits('vim', [{
-      text,
-      range: Range.fromPositions(p1, p2),
-    }]);
+    this.editor.executeEdits("vim", [
+      {
+        text,
+        range: Range.fromPositions(p1, p2),
+      },
+    ]);
     // @TODO - Check if this breaks any other expectation
     this.pushUndoStop();
   }
@@ -618,7 +676,7 @@ class CMAdapter {
   setCursor(line, ch) {
     let pos = line;
 
-    if (typeof line !== 'object') {
+    if (typeof line !== "object") {
       pos = {};
       pos.line = line;
       pos.ch = ch;
@@ -641,13 +699,15 @@ class CMAdapter {
     const selections = this.editor.getSelections();
 
     if (!selections.length || this.inVirtualSelectionMode) {
-      return [{
-        anchor: this.getCursor('anchor'),
-        head: this.getCursor('head'),
-      }];
+      return [
+        {
+          anchor: this.getCursor("anchor"),
+          head: this.getCursor("head"),
+        },
+      ];
     }
 
-    return selections.map(sel => {
+    return selections.map((sel) => {
       const pos = sel.getPosition();
       const start = sel.getStartPosition();
       const end = sel.getEndPosition();
@@ -704,19 +764,23 @@ class CMAdapter {
 
   getSelections() {
     const { editor } = this;
-    return editor.getSelections().map(sel => editor.getModel().getValueInRange(sel));
+    return editor
+      .getSelections()
+      .map((sel) => editor.getModel().getValueInRange(sel));
   }
 
   replaceSelections(texts) {
     const { editor } = this;
 
     editor.getSelections().forEach((sel, index) => {
-      editor.executeEdits('vim', [{
-        range: sel,
-        text: texts[index],
-        forceMoveMarkers: false,
-      }]);
-    })
+      editor.executeEdits("vim", [
+        {
+          range: sel,
+          text: texts[index],
+          forceMoveMarkers: false,
+        },
+      ]);
+    });
   }
 
   toggleOverwrite(toggle) {
@@ -731,7 +795,6 @@ class CMAdapter {
   }
 
   charCoords(pos, mode) {
-
     return {
       top: pos.line,
       left: pos.ch,
@@ -739,8 +802,7 @@ class CMAdapter {
   }
 
   coordsChar(pos, mode) {
-    if (mode === 'local') {
-
+    if (mode === "local") {
     }
   }
 
@@ -762,7 +824,7 @@ class CMAdapter {
 
   getScrollInfo() {
     const { editor } = this;
-    const [ range ] = editor.getVisibleRanges();
+    const [range] = editor.getVisibleRanges();
 
     return {
       left: 0,
@@ -773,18 +835,18 @@ class CMAdapter {
   }
 
   triggerEditorAction(action) {
-    this.editor.trigger('vim', action);
+    this.editor.trigger("vim", action);
   }
 
   dispose() {
-    this.dispatch('dispose');
+    this.dispatch("dispose");
     this.removeOverlay();
 
     if (CMAdapter.keyMap.vim) {
       CMAdapter.keyMap.vim.detach(this);
     }
 
-    this.disposables.forEach(d => d.dispose());
+    this.disposables.forEach((d) => d.dispose());
   }
 
   getInputField() {}
@@ -797,7 +859,7 @@ class CMAdapter {
 
     this.editor.updateOptions({
       cursorWidth: config.fontInfo.typicalFullwidthCharacterWidth,
-      cursorBlinking: 'solid',
+      cursorBlinking: "solid",
     });
   }
 
@@ -806,7 +868,7 @@ class CMAdapter {
 
     this.editor.updateOptions({
       cursorWidth: this.initialCursorWidth || 0,
-      cursorBlinking: 'blink',
+      cursorBlinking: "blink",
     });
   }
 
@@ -816,7 +878,7 @@ class CMAdapter {
 
   markText() {
     // only used for fat-cursor, not needed
-    return {clear: function() {}, find: function() {}};
+    return { clear: function () {}, find: function () {} };
   }
 
   getUserVisibleLines() {
@@ -857,14 +919,14 @@ class CMAdapter {
     let finalUnit = unit;
     const pos = toMonacoPos(startPos);
 
-    if (unit === 'page') {
+    if (unit === "page") {
       const editorHeight = editor.getLayoutInfo().height;
       const lineHeight = this.getConfiguration().fontInfo.lineHeight;
       finalAmount = finalAmount * Math.floor(editorHeight / lineHeight);
-      finalUnit = 'line';
+      finalUnit = "line";
     }
 
-    if (finalUnit === 'line') {
+    if (finalUnit === "line") {
       pos.lineNumber += finalAmount;
     }
 
@@ -907,14 +969,14 @@ class CMAdapter {
     const pos = editor.getPosition();
     const range = Range.fromPositions(pos, pos);
 
-    switch(viewPosition) {
-      case 'top':
+    switch (viewPosition) {
+      case "top":
         editor.revealRangeAtTop(range);
         return;
-      case 'center':
+      case "center":
         editor.revealRangeInCenter(range);
         return;
-      case 'bottom':
+      case "bottom":
         // private api. no other way
         editor._revealRange(range, VerticalRevealType.Bottom);
         return;
@@ -941,17 +1003,25 @@ class CMAdapter {
     const matches = model.findMatches(query, false, isRegex, matchCase) || [];
 
     return {
-      getMatches() {return matches;},
-      findNext() {return this.find(false);},
-      findPrevious() {return this.find(true);},
+      getMatches() {
+        return matches;
+      },
+      findNext() {
+        return this.find(false);
+      },
+      findPrevious() {
+        return this.find(true);
+      },
       jumpTo(index) {
         if (!matches || !matches.length) {
           return false;
         }
         var match = matches[index];
         lastSearch = match.range;
-        context.highlightRanges([lastSearch], 'currentFindMatch');
-        context.highlightRanges(matches.map(m => m.range).filter(r => !r.equalsRange(lastSearch)));
+        context.highlightRanges([lastSearch], "currentFindMatch");
+        context.highlightRanges(
+          matches.map((m) => m.range).filter((r) => !r.equalsRange(lastSearch))
+        );
 
         return lastSearch;
       },
@@ -970,7 +1040,11 @@ class CMAdapter {
             return false;
           }
         } else {
-          const pos = lastSearch ? model.getPositionAt(model.getOffsetAt(lastSearch.getStartPosition()) + 1) : monacoPos;
+          const pos = lastSearch
+            ? model.getPositionAt(
+                model.getOffsetAt(lastSearch.getStartPosition()) + 1
+              )
+            : monacoPos;
           match = model.findNextMatch(query, pos, isRegex, matchCase);
           if (!match || !pos.isBeforeOrEqual(match.range.getStartPosition())) {
             return false;
@@ -978,8 +1052,10 @@ class CMAdapter {
         }
 
         lastSearch = match.range;
-        context.highlightRanges([lastSearch], 'currentFindMatch');
-        context.highlightRanges(matches.map(m => m.range).filter(r => !r.equalsRange(lastSearch)));
+        context.highlightRanges([lastSearch], "currentFindMatch");
+        context.highlightRanges(
+          matches.map((m) => m.range).filter((r) => !r.equalsRange(lastSearch))
+        );
 
         return lastSearch;
       },
@@ -991,32 +1067,35 @@ class CMAdapter {
       },
       replace(text) {
         if (lastSearch) {
-          editor.executeEdits('vim', [{
-            range: lastSearch,
-            text,
-            forceMoveMarkers: true,
-          }]);
+          editor.executeEdits("vim", [
+            {
+              range: lastSearch,
+              text,
+              forceMoveMarkers: true,
+            },
+          ]);
 
           lastSearch.setEndPosition(editor.getPosition());
           editor.setPosition(lastSearch.getStartPosition());
         }
-      }
+      },
     };
   }
 
-  highlightRanges(ranges, className = 'findMatch') {
+  highlightRanges(ranges, className = "findMatch") {
     const decorationKey = `decoration${className}`;
     this[decorationKey] = this.editor.deltaDecorations(
       this[decorationKey] || [],
-      ranges.map(range => ({
+      ranges.map((range) => ({
         range,
         options: {
-          stickiness: monacoEditor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
+          stickiness:
+            monacoEditor.TrackedRangeStickiness.NeverGrowsWhenTypingAtEdges,
           zIndex: 13,
           className,
           showIfCollapsed: true,
         },
-      })),
+      }))
     );
 
     return this[decorationKey];
@@ -1032,7 +1111,9 @@ class CMAdapter {
       query = query.source;
     }
 
-    const match = this.editor.getModel().findNextMatch(query, this.editor.getPosition(), isRegex, matchCase);
+    const match = this.editor
+      .getModel()
+      .findNextMatch(query, this.editor.getPosition(), isRegex, matchCase);
 
     if (!match || !match.range) {
       return;
@@ -1042,7 +1123,7 @@ class CMAdapter {
   }
 
   removeOverlay() {
-    ['currentFindMatch', 'findMatch'].forEach(key => {
+    ["currentFindMatch", "findMatch"].forEach((key) => {
       this.editor.deltaDecorations(this[`decoration${key}`] || [], []);
     });
   }
@@ -1055,7 +1136,7 @@ class CMAdapter {
   }
 
   moveH(units, type) {
-    if (type !== 'char') {
+    if (type !== "char") {
       return;
     }
     const pos = this.editor.getPosition();
@@ -1067,7 +1148,9 @@ class CMAdapter {
     let mPos = toMonacoPos(pos);
     const model = this.editor.getModel();
 
-    const searchFunc = (dir === -1 ? model.findPreviousMatch : model.findNextMatch).bind(model);
+    const searchFunc = (
+      dir === -1 ? model.findPreviousMatch : model.findNextMatch
+    ).bind(model);
     const stack = [];
     let iterations = 0;
 
@@ -1077,7 +1160,14 @@ class CMAdapter {
         return undefined;
       }
 
-      const match = searchFunc(bracketRegex.source, mPos, true, true, null, true);
+      const match = searchFunc(
+        bracketRegex.source,
+        mPos,
+        true,
+        true,
+        null,
+        true
+      );
       const thisBracket = match.matches[0];
 
       if (match === undefined) {
@@ -1086,7 +1176,7 @@ class CMAdapter {
 
       const matchingBracket = CMAdapter.matchingBrackets[thisBracket];
 
-      if (matchingBracket && (matchingBracket.charAt(1) === ">") == (dir > 0)) {
+      if (matchingBracket && (matchingBracket.charAt(1) === ">") == dir > 0) {
         stack.push(thisBracket);
       } else if (stack.length === 0) {
         const res = match.range.getStartPosition();
@@ -1098,7 +1188,9 @@ class CMAdapter {
         stack.pop();
       }
 
-      mPos = model.getPositionAt(model.getOffsetAt(match.range.getStartPosition()) + dir);
+      mPos = model.getPositionAt(
+        model.getOffsetAt(match.range.getStartPosition()) + dir
+      );
       iterations += 1;
     }
   }
@@ -1112,7 +1204,7 @@ class CMAdapter {
   }
 
   indentLine(line, indentRight = true) {
-    const { editor } = this
+    const { editor } = this;
     let cursorConfig;
     if (editor._getViewModel) {
       // Monaco >= 0.21.x
@@ -1125,8 +1217,12 @@ class CMAdapter {
     const sel = Selection.fromPositions(pos, pos);
     // no other way than to use internal apis to preserve the undoStack for a batch of indents
     editor.executeCommands(
-      `editor.action.${indentRight ? 'indent' : 'outdent'}Lines`,
-      TypeOperations[indentRight ? 'indent' : 'outdent'](cursorConfig, this.editor.getModel(), [sel]),
+      `editor.action.${indentRight ? "indent" : "outdent"}Lines`,
+      TypeOperations[indentRight ? "indent" : "outdent"](
+        cursorConfig,
+        this.editor.getModel(),
+        [sel]
+      )
     );
   }
 
