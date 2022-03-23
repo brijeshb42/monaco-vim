@@ -209,7 +209,7 @@ function monacoToCmKey(e, skip = false) {
       break;
   }
 
-  if (keyName.startsWith("KEY_")) {
+  if (keyName.startsWith("Key")) {
     key = keyName[keyName.length - 1].toLowerCase();
   } else if (keyName.endsWith("Arrow")) {
     skipOnlyShiftCheck = true;
