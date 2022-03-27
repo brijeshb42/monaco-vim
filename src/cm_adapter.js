@@ -211,10 +211,14 @@ function monacoToCmKey(e, skip = false) {
 
   if (keyName.startsWith("Key")) {
     key = keyName[keyName.length - 1].toLowerCase();
+  } else if (keyName.startsWith("Digit")) {
+    key = keyName.slice(5, 6);
+  } else if (keyName.startsWith("Numpad")) {
+    key = keyName.slice(6, 7);
   } else if (keyName.endsWith("Arrow")) {
     skipOnlyShiftCheck = true;
-    key = keyName.substr(0, keyName.length - 5);
-  } else if (keyName.startsWith("US_")) {
+    key = keyName.substring(0, keyName.length - 5);
+  } else if (keyName.startsWith("Bracket") || !key) {
     key = e.browserEvent.key;
   }
 
@@ -332,7 +336,9 @@ class CMAdapter {
 
   constructor(editor) {
     this.editor = editor;
-    this.state = {};
+    this.state = {
+      keyMap: "vim",
+    };
     this.marks = {};
     this.$uid = 0;
     this.disposables = [];
@@ -340,6 +346,7 @@ class CMAdapter {
     this.curOp = {};
     this.attached = false;
     this.statusBar = null;
+    this.options = {};
     this.addLocalListeners();
     this.ctxInsert = this.editor.createContextKey("insertMode", true);
   }
@@ -377,8 +384,9 @@ class CMAdapter {
       return;
     }
 
-    if (CMAdapter.keyMap.vim && CMAdapter.keyMap.vim.call) {
-      const cmd = CMAdapter.keyMap.vim.call(key, this);
+    const keymap = this.state.keyMap;
+    if (CMAdapter.keyMap[keymap] && CMAdapter.keyMap[keymap].call) {
+      const cmd = CMAdapter.keyMap[keymap].call(key, this);
       if (cmd) {
         e.preventDefault();
         e.stopPropagation();
@@ -538,7 +546,6 @@ class CMAdapter {
       }
       return this.editor.getRawOptions()[key];
     }
-    return this.state[key];
   }
 
   dispatch(signal, ...args) {
@@ -935,7 +942,7 @@ class CMAdapter {
 
   findMatchingBracket(pos) {
     const mPos = toMonacoPos(pos);
-    const res = this.editor.getModel().matchBracket(mPos);
+    const res = this.editor.getModel().bracketPairs.matchBracket(mPos);
 
     if (!res || !(res.length === 2)) {
       return {
@@ -1244,6 +1251,36 @@ class CMAdapter {
     }
 
     this.statusBar.showNotification(html);
+  }
+
+  smartIndent() {
+    editor.getAction("editor.action.formatSelection").run();
+  }
+
+  moveCursorTo(to) {
+    const newPos = this.editor.getPosition();
+    if (to === "start") {
+      newPos.column = 1;
+    } else if (to === "end") {
+      newPos.column = this.editor
+        .getModel()
+        .getLineMaxColumn(newPos.lineNumber);
+    }
+    this.editor.setPosition(newPos);
+  }
+
+  execCommand(command) {
+    switch (command) {
+      case "goLineLeft":
+        this.moveCursorTo("start");
+        break;
+      case "goLineRight":
+        this.moveCursorTo("end");
+        break;
+      case "indentAuto":
+        this.smartIndent();
+        break;
+    }
   }
 }
 

@@ -1,12 +1,12 @@
 export default class VimStatusBar {
   constructor(node, editor, sanitizer = null) {
     this.node = node;
-    this.modeInfoNode = document.createElement('span');
-    this.secInfoNode = document.createElement('span');
-    this.notifNode = document.createElement('span');
-    this.notifNode.className = 'vim-notification';
-    this.keyInfoNode = document.createElement('span');
-    this.keyInfoNode.setAttribute('style', 'float: right');
+    this.modeInfoNode = document.createElement("span");
+    this.secInfoNode = document.createElement("span");
+    this.notifNode = document.createElement("span");
+    this.notifNode.className = "vim-notification";
+    this.keyInfoNode = document.createElement("span");
+    this.keyInfoNode.setAttribute("style", "float: right");
     this.node.appendChild(this.modeInfoNode);
     this.node.appendChild(this.secInfoNode);
     this.node.appendChild(this.notifNode);
@@ -17,8 +17,8 @@ export default class VimStatusBar {
   }
 
   setMode(ev) {
-    if (ev.mode === 'visual' && ev.subMode === 'linewise') {
-      this.setText('--VISUAL LINE--');
+    if (ev.mode === "visual" && ev.subMode === "linewise") {
+      this.setText("--VISUAL LINE--");
       return;
     }
 
@@ -30,13 +30,13 @@ export default class VimStatusBar {
   }
 
   setSec(text, callback, options) {
-    this.notifNode.textContent = '';
+    this.notifNode.textContent = "";
     if (text === undefined) {
-      return;
+      return this.closeInput;
     }
 
     this.setInnerHtml_(this.secInfoNode, text);
-    const input = this.secInfoNode.querySelector('input');
+    const input = this.secInfoNode.querySelector("input");
 
     if (input) {
       input.focus();
@@ -68,9 +68,9 @@ export default class VimStatusBar {
 
   toggleVisibility(toggle) {
     if (toggle) {
-      this.node.style.display = 'block';
+      this.node.style.display = "block";
     } else {
-      this.node.style.display = 'none';
+      this.node.style.display = "none";
     }
 
     if (this.input) {
@@ -83,7 +83,7 @@ export default class VimStatusBar {
   closeInput = () => {
     this.removeInputListeners();
     this.input = null;
-    this.setSec('');
+    this.setSec("");
 
     if (this.editor) {
       this.editor.focus();
@@ -91,12 +91,19 @@ export default class VimStatusBar {
   };
 
   clear = () => {
-    this.setInnerHtml_(this.node, '');
-  }
+    this.setInnerHtml_(this.node, "");
+  };
 
   inputKeyUp = (e) => {
     const { options } = this.input;
     if (options && options.onKeyUp) {
+      options.onKeyUp(e, e.target.value, this.closeInput);
+    }
+  };
+
+  inputKeyInput = (e) => {
+    const { options } = this.input;
+    if (options && options.onKeyInput) {
       options.onKeyUp(e, e.target.value, this.closeInput);
     }
   };
@@ -112,11 +119,18 @@ export default class VimStatusBar {
   inputKeyDown = (e) => {
     const { options, callback } = this.input;
 
-    if (options && options.onKeyDown && options.onKeyDown(e, e.target.value, this.closeInput)) {
+    if (
+      options &&
+      options.onKeyDown &&
+      options.onKeyDown(e, e.target.value, this.closeInput)
+    ) {
       return;
     }
 
-    if (e.keyCode === 27 || (options && options.closeOnEnter !== false && e.keyCode == 13)) {
+    if (
+      e.keyCode === 27 ||
+      (options && options.closeOnEnter !== false && e.keyCode == 13)
+    ) {
       this.input.node.blur();
       e.stopPropagation();
       this.closeInput();
@@ -131,10 +145,10 @@ export default class VimStatusBar {
 
   addInputListeners() {
     const { node } = this.input;
-    node.addEventListener('keyup', this.inputKeyUp);
-    node.addEventListener('keydown', this.inputKeyDown);
-    node.addEventListener('input', this.inputKeyInput);
-    node.addEventListener('blur', this.inputBlur);
+    node.addEventListener("keyup", this.inputKeyUp);
+    node.addEventListener("keydown", this.inputKeyDown);
+    node.addEventListener("input", this.inputKeyInput);
+    node.addEventListener("blur", this.inputBlur);
   }
 
   removeInputListeners() {
@@ -143,30 +157,33 @@ export default class VimStatusBar {
     }
 
     const { node } = this.input;
-    node.removeEventListener('keyup', this.inputKeyUp);
-    node.removeEventListener('keydown', this.inputKeyDown);
-    node.removeEventListener('input', this.inputKeyInput);
-    node.removeEventListener('blur', this.inputBlur);
+    node.removeEventListener("keyup", this.inputKeyUp);
+    node.removeEventListener("keydown", this.inputKeyDown);
+    node.removeEventListener("input", this.inputKeyInput);
+    node.removeEventListener("blur", this.inputBlur);
   }
 
   showNotification(text) {
-    const sp = document.createElement('span');
+    const sp = document.createElement("span");
     this.setInnerHtml_(sp, text);
     this.notifNode.textContent = sp.textContent;
     this.notifTimeout = setTimeout(() => {
-      this.notifNode.textContent = '';
+      this.notifNode.textContent = "";
     }, 5000);
   }
 
   setInnerHtml_(element, htmlContents) {
+    // Clear out previous contents first.
+    while (element.childNodes.length) {
+      element.removeChild(element.childNodes[0]);
+    }
+    if (!htmlContents) {
+      return;
+    }
     if (this.sanitizer) {
-      // Clear out previous contents first.
-      while (element.children.length) {
-        element.removeChild(element.children[0]);
-      }
       element.appendChild(this.sanitizer(htmlContents));
     } else {
-      element.innerHTML = htmlContents;
+      element.appendChild(htmlContents);
     }
   }
 }
