@@ -3639,6 +3639,9 @@ var Vim = function () {
       cm.setCursor(curFinalPos);
     },
     newLineAndEnterInsertMode: function (cm, actionArgs, vim) {
+      if (cm.getOption("readOnly")) {
+        return;
+      }
       vim.insertMode = true;
       var insertAt = copyCursor(cm.getCursor());
       if (insertAt.line === cm.firstLine() && !actionArgs.after) {
