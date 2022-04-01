@@ -1257,7 +1257,7 @@ class CMAdapter {
   }
 
   smartIndent() {
-    editor.getAction("editor.action.formatSelection").run();
+    this.editor.getAction("editor.action.reindentselectedlines").run();
   }
 
   moveCursorTo(to) {
