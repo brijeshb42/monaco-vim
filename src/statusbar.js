@@ -17,8 +17,14 @@ export default class VimStatusBar {
   }
 
   setMode(ev) {
-    if (ev.mode === "visual" && ev.subMode === "linewise") {
-      this.setText("--VISUAL LINE--");
+    if (ev.mode === "visual") {
+      if (ev.subMode === "linewise") {
+        this.setText("--VISUAL LINE--");
+      } else if (ev.subMode === "blockwise") {
+        this.setText("--VISUAL BLOCK--");
+      } else {
+        this.setText("--VISUAL--");
+      }
       return;
     }
 
