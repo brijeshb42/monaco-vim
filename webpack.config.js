@@ -78,12 +78,12 @@ module.exports = (_env, argv) => {
             commonjs2: "monaco-editor",
             amd: "vs/editor/editor.main",
           },
-          "monaco-editor/esm/vs/editor/common/cursor/cursorTypeOperations": {
+          "monaco-editor/esm/vs/editor/common/commands/shiftCommand": {
             commonjs:
-              "monaco-editor/esm/vs/editor/common/cursor/cursorTypeOperations",
+              "monaco-editor/esm/vs/editor/common/commands/shiftCommand",
             commonjs2:
-              "monaco-editor/esm/vs/editor/common/cursor/cursorTypeOperations",
-            amd: "vs/editor/common/cursor/cursorTypeOperations",
+              "monaco-editor/esm/vs/editor/common/commands/shiftCommand",
+            amd: "vs/editor/common/commands/shiftCommand",
           },
         }
       : {},

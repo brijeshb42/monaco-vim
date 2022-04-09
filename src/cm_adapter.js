@@ -9,7 +9,7 @@ import {
   SelectionDirection,
   editor as monacoEditor,
 } from "monaco-editor";
-import { TypeOperations } from "monaco-editor/esm/vs/editor/common/cursor/cursorTypeOperations";
+import { ShiftCommand } from "monaco-editor/esm/vs/editor/common/commands/shiftCommand";
 const VerticalRevealType = {
   Bottom: 4,
 };
@@ -212,7 +212,8 @@ function monacoToCmKey(e, skip = false) {
       break;
   }
 
-  if (keyName.startsWith("Key")) {
+  // `Key` check for monaco >= 0.30.0
+  if (keyName.startsWith("Key") || keyName.startsWith("KEY_")) {
     key = keyName[keyName.length - 1].toLowerCase();
   } else if (keyName.startsWith("Digit")) {
     key = keyName.slice(5, 6);
@@ -221,7 +222,12 @@ function monacoToCmKey(e, skip = false) {
   } else if (keyName.endsWith("Arrow")) {
     skipOnlyShiftCheck = true;
     key = keyName.substring(0, keyName.length - 5);
-  } else if (keyName.startsWith("Bracket") || !key) {
+  } else if (
+    keyName.startsWith("US_") ||
+    // `Bracket` check for monaco >= 0.30.0
+    keyName.startsWith("Bracket") ||
+    !key
+  ) {
     key = e.browserEvent.key;
   }
 
@@ -658,7 +664,6 @@ class CMAdapter {
   getSelection() {
     var list = [];
     var editor = this.editor;
-    var vim = this.state.vim;
     editor.getSelections().map(function (sel) {
       list.push(editor.getModel().getValueInRange(sel));
     });
@@ -945,7 +950,14 @@ class CMAdapter {
 
   findMatchingBracket(pos) {
     const mPos = toMonacoPos(pos);
-    const res = this.editor.getModel().bracketPairs.matchBracket(mPos);
+    const model = this.editor.getModel();
+    let res;
+    // for monaco versions >= 0.28.0
+    if (model.bracketPairs) {
+      res = model.bracketPairs.matchBracket(mPos);
+    } else {
+      res = model.matchBracket?.(mPos);
+    }
 
     if (!res || !(res.length === 2)) {
       return {
@@ -988,12 +1000,12 @@ class CMAdapter {
         return;
       case "bottom":
         // private api. no other way
-        editor._revealRange(range, VerticalRevealType.Bottom);
+        editor._revealRange?.(range, VerticalRevealType.Bottom);
         return;
     }
   }
 
-  getSearchCursor(query, pos, caseFold) {
+  getSearchCursor(query, pos) {
     let matchCase = false;
     let isRegex = false;
 
@@ -1216,23 +1228,25 @@ class CMAdapter {
   indentLine(line, indentRight = true) {
     const { editor } = this;
     let cursorConfig;
+    // Monaco >= 0.21.x
     if (editor._getViewModel) {
-      // Monaco >= 0.21.x
       cursorConfig = editor._getViewModel().cursorConfig;
     } else {
-      // Monaco <= 0.20.x
       cursorConfig = editor._getCursors().context.config;
     }
     const pos = new Position(line + 1, 1);
     const sel = Selection.fromPositions(pos, pos);
     // no other way than to use internal apis to preserve the undoStack for a batch of indents
-    editor.executeCommands(
-      `editor.action.${indentRight ? "indent" : "outdent"}Lines`,
-      TypeOperations[indentRight ? "indent" : "outdent"](
-        cursorConfig,
-        this.editor.getModel(),
-        [sel]
-      )
+    editor.executeCommand(
+      "vim",
+      new ShiftCommand(sel, {
+        isUnshift: !indentRight,
+        tabSize: cursorConfig.tabSize,
+        indentSize: cursorConfig.indentSize,
+        insertSpaces: cursorConfig.insertSpaces,
+        useTabStops: cursorConfig.useTabStops,
+        autoIndent: cursorConfig.autoIndent,
+      })
     );
   }
 
@@ -1257,7 +1271,9 @@ class CMAdapter {
   }
 
   smartIndent() {
-    this.editor.getAction("editor.action.reindentselectedlines").run();
+    // Only works if a formatter is added for the current language.
+    // reindentselectedlines does not work here.
+    this.editor.getAction("editor.action.formatSelection").run();
   }
 
   moveCursorTo(to) {
