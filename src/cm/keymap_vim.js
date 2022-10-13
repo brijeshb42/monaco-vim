@@ -3191,7 +3191,7 @@ var Vim = function () {
         head.line--;
         cm.setSelection(anchor, head);
         text = cm.getSelection();
-        cm.replaceSelection("");
+        cm.replaceSelections("");
         finalHead = anchor;
       } else {
         text = cm.getSelection();
@@ -7103,7 +7103,8 @@ var Vim = function () {
         if (change instanceof InsertModeKey) {
           CodeMirror.lookupKey(change.keyName, "vim-insert", keyHandler);
         } else if (typeof change == "string") {
-          cm.replaceSelection(change);
+          window.cm = cm;
+          cm.replaceSelections(change);
         } else {
           var start = cm.getCursor();
           var end = offsetCursor(start, 0, change[0].length);
