@@ -72,10 +72,10 @@ module.exports = (_env, argv) => {
         ],
     externals: isProd
       ? {
-          "monaco-editor": {
+          "monaco-editor/esm/vs/editor/editor.api": {
             root: "monaco",
-            commonjs: "monaco-editor",
-            commonjs2: "monaco-editor",
+            commonjs: "monaco-editor/esm/vs/editor/editor.api",
+            commonjs2: "monaco-editor/esm/vs/editor/editor.api",
             amd: "vs/editor/editor.main",
           },
           "monaco-editor/esm/vs/editor/common/commands/shiftCommand": {
