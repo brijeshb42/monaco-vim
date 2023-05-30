@@ -1064,7 +1064,7 @@ class CMAdapter {
         } else {
           const pos = lastSearch
             ? model.getPositionAt(
-                model.getOffsetAt(lastSearch.getStartPosition()) + 1
+                model.getOffsetAt(lastSearch.getEndPosition()) + 1
               )
             : monacoPos;
           match = model.findNextMatch(query, pos, isRegex, matchCase);
@@ -1089,15 +1089,20 @@ class CMAdapter {
       },
       replace(text) {
         if (lastSearch) {
-          editor.executeEdits("vim", [
-            {
-              range: lastSearch,
-              text,
-              forceMoveMarkers: true,
-            },
-          ]);
-
-          lastSearch.setEndPosition(editor.getPosition());
+          editor.executeEdits(
+            "vim",
+            [
+              {
+                range: lastSearch,
+                text,
+                forceMoveMarkers: true,
+              },
+            ],
+            function (edits) {
+              const { endLineNumber, endColumn } = edits[0].range;
+              lastSearch = lastSearch.setEndPosition(endLineNumber, endColumn);
+            }
+          );
           editor.setPosition(lastSearch.getStartPosition());
         }
       },
