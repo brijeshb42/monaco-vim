@@ -11,7 +11,7 @@
     "babel": "NODE_ENV=production babel ./src -d lib --ignore src/demo.js",
     "build": "npm run clean && npm run babel && npm run dist",
     "local": "mkdir -p local && cp -r lib dist package.json local",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "yarn build"
   },
   "keywords": [
     "monaco-editor",
