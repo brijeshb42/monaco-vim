@@ -368,7 +368,7 @@ class CMAdapter {
     this.disposables.push(
       this.editor.onDidChangeCursorPosition(this.handleCursorChange),
       this.editor.onDidChangeModelContent(this.handleChange),
-      this.editor.onKeyDown(this.handleKeyDown)
+      this.editor.onKeyDown(this.handleKeyDown),
     );
   }
 
@@ -417,7 +417,7 @@ class CMAdapter {
       pos.lineNumber,
       pos.column,
       pos.lineNumber,
-      pos.column + 1
+      pos.column + 1,
     );
     let forceMoveMarkers = true;
 
@@ -438,7 +438,7 @@ class CMAdapter {
         pos.lineNumber,
         pos.column,
         pos.lineNumber,
-        pos.column - 1
+        pos.column - 1,
       );
     } else {
       return;
@@ -875,6 +875,7 @@ class CMAdapter {
     this.editor.updateOptions({
       cursorWidth: config.fontInfo.typicalFullwidthCharacterWidth,
       cursorBlinking: "solid",
+      cursorStyle: "block",
     });
   }
 
@@ -884,6 +885,7 @@ class CMAdapter {
     this.editor.updateOptions({
       cursorWidth: this.initialCursorWidth || 0,
       cursorBlinking: "blink",
+      cursorStyle: "line",
     });
   }
 
@@ -1042,7 +1044,7 @@ class CMAdapter {
         lastSearch = match.range;
         context.highlightRanges([lastSearch], "currentFindMatch");
         context.highlightRanges(
-          matches.map((m) => m.range).filter((r) => !r.equalsRange(lastSearch))
+          matches.map((m) => m.range).filter((r) => !r.equalsRange(lastSearch)),
         );
 
         return lastSearch;
@@ -1064,7 +1066,7 @@ class CMAdapter {
         } else {
           const pos = lastSearch
             ? model.getPositionAt(
-                model.getOffsetAt(lastSearch.getEndPosition()) + 1
+                model.getOffsetAt(lastSearch.getEndPosition()) + 1,
               )
             : monacoPos;
           match = model.findNextMatch(query, pos, isRegex, matchCase);
@@ -1076,7 +1078,7 @@ class CMAdapter {
         lastSearch = match.range;
         context.highlightRanges([lastSearch], "currentFindMatch");
         context.highlightRanges(
-          matches.map((m) => m.range).filter((r) => !r.equalsRange(lastSearch))
+          matches.map((m) => m.range).filter((r) => !r.equalsRange(lastSearch)),
         );
 
         return lastSearch;
@@ -1101,7 +1103,7 @@ class CMAdapter {
             function (edits) {
               const { endLineNumber, endColumn } = edits[0].range;
               lastSearch = lastSearch.setEndPosition(endLineNumber, endColumn);
-            }
+            },
           );
           editor.setPosition(lastSearch.getStartPosition());
         }
@@ -1122,7 +1124,7 @@ class CMAdapter {
           className,
           showIfCollapsed: true,
         },
-      }))
+      })),
     );
 
     return this[decorationKey];
@@ -1193,7 +1195,7 @@ class CMAdapter {
         true,
         true,
         null,
-        true
+        true,
       );
       const thisBracket = match.matches[0];
 
@@ -1216,7 +1218,7 @@ class CMAdapter {
       }
 
       mPos = model.getPositionAt(
-        model.getOffsetAt(match.range.getStartPosition()) + dir
+        model.getOffsetAt(match.range.getStartPosition()) + dir,
       );
       iterations += 1;
     }
@@ -1251,7 +1253,7 @@ class CMAdapter {
         insertSpaces: cursorConfig.insertSpaces,
         useTabStops: cursorConfig.useTabStops,
         autoIndent: cursorConfig.autoIndent,
-      })
+      }),
     );
   }
 
