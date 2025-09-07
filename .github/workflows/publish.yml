@@ -1,20 +1,28 @@
 name: Publish Package to npmjs
 on:
-  push:
-    branches:
-      - master
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: 'Commit SHA to release from'
+        required: false
+        type: string
 jobs:
-  build:
+  publish:
+    permissions:
+      contents: read
+      id-token: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-node@v5
         with:
-          node-version: "22.x"
+          ref: ${{ inputs.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
           registry-url: "https://registry.npmjs.org"
-      - run: |
-          corepack enable
-          yarn
-      - run: npm publish
+      - name: Update npm
+        run: npm install -g npm@latest
+      - run: yarn
+      - run: npm publish --provenance --access public
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_OPTIONS: "--openssl-legacy-provider"
