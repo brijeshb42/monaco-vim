@@ -37,7 +37,7 @@
     "css-loader": "^7.0.0",
     "file-loader": "^6.2.0",
     "html-webpack-plugin": "^5.5.0",
-    "monaco-editor": "^0.33.0",
+    "monaco-editor": "^0.53.0",
     "monaco-editor-webpack-plugin": "^7.0.1",
     "style-loader": "^4.0.0",
     "webpack": "^5.68.0",
