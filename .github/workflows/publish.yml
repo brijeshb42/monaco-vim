@@ -21,7 +21,7 @@ jobs:
           node-version: "22"
           registry-url: "https://registry.npmjs.org"
       - name: Update npm
-        run: npm install -g npm@latest && corepack enable yarn && yarn set version berry
+        run: npm install -g npm@latest && corepack enable && yarn set version berry
       - run: yarn
       - run: npm publish --provenance --access public
         env:
