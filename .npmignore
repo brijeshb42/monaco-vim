@@ -1,7 +1,10 @@
 .gitignore
 index.html
 yarn.lock
-webpack.config.js
+pnpm-lock.yaml
 node_modules/
 local/
 .babelrc
+tsconfig.json
+tsdown.config.mts
+vite.config.ts

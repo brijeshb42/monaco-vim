@@ -7,6 +7,7 @@ Vim keybindings for monaco-editor [demo](https://editor-a5ea1.web.app/)
 ### Install
 
 #### Webpack/browserify
+
 ```sh
 npm install monaco-vim
 ```
@@ -21,9 +22,9 @@ If you are using that, then there will be no problem. See [AMD](#AMD).
 ### Usage
 
 ```js
-import { initVimMode } from 'monaco-vim';
+import { initVimMode } from "monaco-vim";
 
-const vimMode = initVimMode(editor, document.getElementById('my-statusbar'))
+const vimMode = initVimMode(editor, document.getElementById("my-statusbar"));
 ```
 
 Here, `editor` is initialized instance of monaco editor and the 2nd argument should be the node where you would like to place/show the VIM status info.
@@ -50,65 +51,83 @@ If you are following the official guide and integrating the AMD version of `mona
 ```html
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
-</head>
-<body>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+  </head>
+  <body>
+    <div
+      id="container"
+      style="width:800px;height:600px;border:1px solid grey"
+    ></div>
+    <div id="status"></div>
 
-<div id="container" style="width:800px;height:600px;border:1px solid grey"></div>
-<div id="status"></div>
+    <script src="https://unpkg.com/monaco-editor/min/vs/loader.js"></script>
+    <script>
+      require.config({
+        paths: {
+          vs: "https://unpkg.com/monaco-editor/min/vs",
+          "monaco-vim": "https://unpkg.com/monaco-vim@0.4.2/dist/monaco-vim.js",
+        },
+      });
+      require(["vs/editor/editor.main", "monaco-vim"], function (a, MonacoVim) {
+        var editor = monaco.editor.create(
+          document.getElementById("container"),
+          {
+            value: [
+              "function x() {",
+              '\tconsole.log("Hello world!");',
+              "}",
+            ].join("\n"),
+            language: "javascript",
+          }
+        );
+        var statusNode = document.getElementById("status");
+        var vimMode = MonacoVim.initVimMode(editor, statusNode);
 
-<script src="https://unpkg.com/monaco-editor/min/vs/loader.js"></script>
-<script>
-  require.config({
-    paths: {
-      'vs': 'https://unpkg.com/monaco-editor/min/vs',
-      'monaco-vim': 'https://unpkg.com/monaco-vim/dist/monaco-vim',
-    }
-  });
-  require(['vs/editor/editor.main', 'monaco-vim'], function(a, MonacoVim) {
-    var editor = monaco.editor.create(document.getElementById('container'), {
-      value: [
-        'function x() {',
-        '\tconsole.log("Hello world!");',
-        '}'
-      ].join('\n'),
-      language: 'javascript'
-    });
-    var statusNode = document.getElementById('status');
-    var vimMode = MonacoVim.initVimMode(editor, statusNode);
-
-    // remove vim mode by calling
-    // vimMode.dispose();
-  });
-</script>
-</body>
+        // remove vim mode by calling
+        // vimMode.dispose();
+      });
+    </script>
+  </body>
 </html>
 ```
 
-See [demo.js](https://github.com/brijeshb42/monaco-vim/tree/master/src/demo.js) for full usage.
+See [demo.ts](https://github.com/brijeshb42/monaco-vim/tree/master/src/demo.ts) for full usage.
 
-If you would like to customize the statusbar or provide your own implementation, see `initVimMode`'s implementation in [src/index.js](https://github.com/brijeshb42/monaco-vim/tree/master/src/index.js).
+If you would like to customize the statusbar or provide your own implementation, see `initVimMode`'s implementation in [src/index.ts](https://github.com/brijeshb42/monaco-vim/tree/master/src/index.ts).
+
+### Development
+
+```sh
+pnpm install
+pnpm dev
+```
+
+The demo runs on Vite at http://localhost:8080. Build the distributable bundle with:
+
+```sh
+pnpm build
+```
 
 ### Adding custom key bindings
 
 Actual vim implementation can be imported as:
 
 ```js
-import { VimMode } from 'monaco-vim';
+import { VimMode } from "monaco-vim";
 ```
 
 #### Defining ex mode command
 
 ```js
 // VimMode.Vim.defineEx(name, shorthand, callback);
-VimMode.Vim.defineEx('write', 'w', function() {
+VimMode.Vim.defineEx("write", "w", function () {
   // your own implementation on what you want to do when :w is pressed
-  localStorage.setItem('editorvalue', editor.getValue());
+  localStorage.setItem("editorvalue", editor.getValue());
 });
 ```
 
-For advanced usage, refer [codemirror](https://github.com/codemirror/CodeMirror/issues/2840#issuecomment-58125831).  `CodeMirror.Vim` is available as `VimMode.Vim`;
+For advanced usage, refer [codemirror](https://github.com/codemirror/CodeMirror/issues/2840#issuecomment-58125831). `CodeMirror.Vim` is available as `VimMode.Vim`;
 
 This implementaion of VIM is a layer between Codemirror's VIM keybindings and monaco. There may be issues in some of the keybindings, especially those that expect extra input like the Ex commands or search/replace. If you encounter such bugs, create a new [issue](https://github.com/brijeshb42/monaco-vim/issues). PRs to resolve those are welcome too.

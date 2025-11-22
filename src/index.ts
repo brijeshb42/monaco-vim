@@ -1,13 +1,22 @@
-import { default as VimMode } from "./cm/keymap_vim";
-
+import type * as MonacoEditor from "monaco-editor";
+import VimMode from "./cm/keymap_vim";
 import StatusBar from "./statusbar";
 
+type Sanitizer = ((node: Node) => Node) | null;
+type StatusBarCtor = new (
+  node: HTMLElement,
+  editor: MonacoEditor.editor.IStandaloneCodeEditor,
+  sanitizer?: Sanitizer,
+) => StatusBar;
+
+export type VimAdapterInstance = InstanceType<typeof VimMode>;
+
 export function initVimMode(
-  editor,
-  statusbarNode = null,
-  StatusBarClass = StatusBar,
-  sanitizer = null
-) {
+  editor: MonacoEditor.editor.IStandaloneCodeEditor,
+  statusbarNode: HTMLElement | null = null,
+  StatusBarClass: StatusBarCtor = StatusBar,
+  sanitizer: Sanitizer = null,
+): VimAdapterInstance {
   const vimAdapter = new VimMode(editor);
 
   if (!statusbarNode) {

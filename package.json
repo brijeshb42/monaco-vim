@@ -2,16 +2,28 @@
   "name": "monaco-vim",
   "version": "0.4.3",
   "description": "Vim keybindings for monaco-editor",
-  "main": "./lib/index.js",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "browser": "./dist/monaco-vim.umd.js",
+      "types": {
+        "import": "./dist/index.d.mts",
+        "default": "./dist/index.d.cts"
+      },
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
   "scripts": {
-    "test": "echo \"No test in this repo\"",
-    "start": "webpack-dev-server --mode development --host=0.0.0.0 --port=8080",
-    "clean": "rm -rf lib dist local",
-    "dist": "webpack --mode production",
-    "babel": "NODE_ENV=production babel ./src -d lib --ignore src/demo.js",
-    "build": "npm run clean && npm run babel && npm run dist",
-    "local": "mkdir -p local && cp -r lib dist package.json local",
-    "prepublishOnly": "yarn build"
+    "clean": "rimraf dist",
+    "dev": "vite --host 0.0.0.0 --port 8080",
+    "preview": "vite preview --host 0.0.0.0 --port 8080",
+    "typecheck": "tsc --noEmit",
+    "build": "pnpm run clean && tsdown",
+    "prepublishOnly": "pnpm run build"
   },
   "keywords": [
     "monaco-editor",
@@ -19,7 +31,6 @@
   ],
   "files": [
     "dist",
-    "lib",
     "src",
     "LICENSE",
     "LICENSE.codemirror.txt",
@@ -27,25 +38,21 @@
   ],
   "author": "Brijesh Bittu <brijesh@bitwiser.in> (http://bitwiser.in/)",
   "license": "MIT",
-  "devDependencies": {
-    "@babel/cli": "^7.17.0",
-    "@babel/core": "^7.17.0",
-    "@babel/plugin-syntax-dynamic-import": "^7.8.3",
-    "@babel/preset-env": "^7.16.11",
-    "babel-loader": "^10.0.0",
-    "babel-plugin-transform-class-properties": "^6.24.1",
-    "css-loader": "^7.0.0",
-    "file-loader": "^6.2.0",
-    "html-webpack-plugin": "^5.5.0",
-    "monaco-editor": "^0.33.0",
-    "monaco-editor-webpack-plugin": "^7.0.1",
-    "style-loader": "^4.0.0",
-    "webpack": "^5.68.0",
-    "webpack-cli": "^6.0.0",
-    "webpack-dev-server": "^5.0.0"
-  },
   "peerDependencies": {
     "monaco-editor": "*"
   },
-  "packageManager": "yarn@4.9.4+sha512.7b1cb0b62abba6a537b3a2ce00811a843bea02bcf53138581a6ae5b1bf563f734872bd47de49ce32a9ca9dcaff995aa789577ffb16811da7c603dcf69e73750b"
+  "homepage": "https://github.com/brijeshb42/monaco-vim",
+  "repository": {
+    "url": "https://github.com/brijeshb42/monaco-vim.git"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "monaco-editor": "^0.33.0",
+    "rimraf": "^6.0.1",
+    "tsdown": "^0.16.6",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11",
+    "vite-plugin-monaco-editor": "^1.1.0"
+  },
+  "packageManager": "pnpm@10.23.0"
 }

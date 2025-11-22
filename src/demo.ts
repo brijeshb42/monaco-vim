@@ -1,6 +1,7 @@
 import * as monaco from "monaco-editor";
+import "monaco-editor/min/vs/editor/editor.main.css";
 
-import { initVimMode } from "./";
+import { initVimMode, VimAdapterInstance } from "./index";
 
 const text = `var StringStream = function (string, tabSize) {
   this.pos = this.start = 0;
@@ -91,37 +92,48 @@ StringStream.prototype = {
   },
 };`;
 
-const editorNode = document.getElementById("editor1");
-const statusNode = document.getElementById("status1");
-const editor = monaco.editor.create(editorNode, {
-  value: text,
-  minimap: {
-    enabled: false,
-  },
-  theme: "vs",
-  language: "javascript",
-  fontSize: 15,
-  scrollBeyondLastLine: false,
-});
-editor.focus();
-const vimMode = initVimMode(editor, statusNode);
+type DemoEditorRefs = {
+  editor: monaco.editor.IStandaloneCodeEditor;
+  vimMode: VimAdapterInstance;
+};
 
-const editorNode2 = document.getElementById("editor2");
-const statusNode2 = document.getElementById("status2");
-const editor2 = monaco.editor.create(editorNode2, {
-  value: text,
-  minimap: {
-    enabled: false,
-  },
-  theme: "vs",
-  language: "javascript",
-  fontSize: 15,
-  scrollBeyondLastLine: false,
-});
-editor.focus();
-const vimMode2 = initVimMode(editor2, statusNode2);
+function createDemoEditor(editorId: string, statusId: string): DemoEditorRefs {
+  const editorNode = document.getElementById(editorId);
+  const statusNode = document.getElementById(statusId);
 
-window.editor = editor;
-window.vimMode = vimMode;
-window.editor2 = editor;
-window.vimMode2 = vimMode2;
+  if (!editorNode || !statusNode) {
+    throw new Error(`Missing demo nodes for ${editorId}/${statusId}`);
+  }
+
+  const editor = monaco.editor.create(editorNode, {
+    value: text,
+    minimap: {
+      enabled: false,
+    },
+    theme: "vs",
+    language: "javascript",
+    fontSize: 15,
+    scrollBeyondLastLine: false,
+  });
+  editor.focus();
+  const vimMode = initVimMode(editor, statusNode);
+
+  return { editor, vimMode };
+}
+
+const primary = createDemoEditor("editor1", "status1");
+const secondary = createDemoEditor("editor2", "status2");
+
+declare global {
+  interface Window {
+    editor: monaco.editor.IStandaloneCodeEditor;
+    vimMode: VimAdapterInstance;
+    editor2: monaco.editor.IStandaloneCodeEditor;
+    vimMode2: VimAdapterInstance;
+  }
+}
+
+window.editor = primary.editor;
+window.vimMode = primary.vimMode;
+window.editor2 = secondary.editor;
+window.vimMode2 = secondary.vimMode;

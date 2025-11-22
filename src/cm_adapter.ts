@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * An adapter to make CodeMirror's vim bindings work with monaco
  */

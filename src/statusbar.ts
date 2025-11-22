@@ -1,5 +1,49 @@
+import type * as MonacoEditor from "monaco-editor";
+
+export interface VimModeChangeEvent {
+  mode: string;
+  subMode?: string;
+}
+
+type Sanitizer = ((node: Node) => Node) | null;
+
+interface StatusBarInputOptions {
+  selectValueOnOpen?: boolean;
+  value?: string;
+  onKeyUp?: (event: KeyboardEvent, value: string, close: () => void) => void;
+  onKeyDown?: (
+    event: KeyboardEvent,
+    value: string,
+    close: () => void,
+  ) => boolean | void;
+  onKeyInput?: (event: InputEvent, value: string, close: () => void) => void;
+  onBlur?: (event: FocusEvent, close: () => void) => void;
+  closeOnBlur?: boolean;
+  closeOnEnter?: boolean;
+}
+
+interface StatusBarInput {
+  callback?: (value: string) => void;
+  options?: StatusBarInputOptions;
+  node: HTMLInputElement;
+}
+
 export default class VimStatusBar {
-  constructor(node, editor, sanitizer = null) {
+  private readonly node: HTMLElement;
+  private readonly modeInfoNode: HTMLSpanElement;
+  private readonly secInfoNode: HTMLSpanElement;
+  private readonly notifNode: HTMLSpanElement;
+  private readonly keyInfoNode: HTMLSpanElement;
+  private readonly editor: MonacoEditor.editor.IStandaloneCodeEditor | null;
+  private readonly sanitizer: Sanitizer;
+  private input: StatusBarInput | null = null;
+  private notifTimeout?: ReturnType<typeof setTimeout>;
+
+  constructor(
+    node: HTMLElement,
+    editor: MonacoEditor.editor.IStandaloneCodeEditor | null,
+    sanitizer: Sanitizer = null,
+  ) {
     this.node = node;
     this.modeInfoNode = document.createElement("span");
     this.secInfoNode = document.createElement("span");
@@ -16,7 +60,7 @@ export default class VimStatusBar {
     this.sanitizer = sanitizer;
   }
 
-  setMode(ev) {
+  setMode(ev: VimModeChangeEvent) {
     if (ev.mode === "visual") {
       if (ev.subMode === "linewise") {
         this.setText("--VISUAL LINE--");
@@ -31,11 +75,15 @@ export default class VimStatusBar {
     this.setText(`--${ev.mode.toUpperCase()}--`);
   }
 
-  setKeyBuffer(key) {
+  setKeyBuffer(key: string) {
     this.keyInfoNode.textContent = key;
   }
 
-  setSec(text, callback, options) {
+  setSec(
+    text: Node | string | null | undefined,
+    callback?: (value: string) => void,
+    options?: StatusBarInputOptions,
+  ) {
     this.notifNode.textContent = "";
     if (text === undefined) {
       return this.closeInput;
@@ -68,11 +116,11 @@ export default class VimStatusBar {
     return this.closeInput;
   }
 
-  setText(text) {
+  setText(text: string) {
     this.modeInfoNode.textContent = text;
   }
 
-  toggleVisibility(toggle) {
+  toggleVisibility(toggle: boolean) {
     if (toggle) {
       this.node.style.display = "block";
     } else {
@@ -83,7 +131,9 @@ export default class VimStatusBar {
       this.removeInputListeners();
     }
 
-    clearInterval(this.notifTimeout);
+    if (this.notifTimeout) {
+      clearTimeout(this.notifTimeout);
+    }
   }
 
   closeInput = () => {
@@ -100,35 +150,55 @@ export default class VimStatusBar {
     this.setInnerHtml_(this.node, "");
   };
 
-  inputKeyUp = (e) => {
+  inputKeyUp = (e: KeyboardEvent) => {
+    if (!this.input) {
+      return;
+    }
     const { options } = this.input;
     if (options && options.onKeyUp) {
-      options.onKeyUp(e, e.target.value, this.closeInput);
+      options.onKeyUp(
+        e,
+        (e.target as HTMLInputElement).value,
+        this.closeInput,
+      );
     }
   };
 
-  inputKeyInput = (e) => {
+  inputKeyInput = (e: InputEvent) => {
+    if (!this.input) {
+      return;
+    }
     const { options } = this.input;
     if (options && options.onKeyInput) {
-      options.onKeyUp(e, e.target.value, this.closeInput);
+      options.onKeyInput(e, (e.target as HTMLInputElement).value, this.closeInput);
     }
   };
 
-  inputBlur = () => {
+  inputBlur = (event: FocusEvent) => {
+    if (!this.input) {
+      return;
+    }
     const { options } = this.input;
 
-    if (options.closeOnBlur) {
+    if (options?.onBlur) {
+      options.onBlur(event, this.closeInput);
+    }
+
+    if (options?.closeOnBlur) {
       this.closeInput();
     }
   };
 
-  inputKeyDown = (e) => {
+  inputKeyDown = (e: KeyboardEvent) => {
+    if (!this.input) {
+      return;
+    }
     const { options, callback } = this.input;
 
     if (
       options &&
       options.onKeyDown &&
-      options.onKeyDown(e, e.target.value, this.closeInput)
+      options.onKeyDown(e, (e.target as HTMLInputElement).value, this.closeInput)
     ) {
       return;
     }
@@ -145,11 +215,14 @@ export default class VimStatusBar {
     if (e.keyCode === 13 && callback) {
       e.stopPropagation();
       e.preventDefault();
-      callback(e.target.value);
+      callback((e.target as HTMLInputElement).value);
     }
   };
 
   addInputListeners() {
+    if (!this.input) {
+      return;
+    }
     const { node } = this.input;
     node.addEventListener("keyup", this.inputKeyUp);
     node.addEventListener("keydown", this.inputKeyDown);
@@ -169,7 +242,7 @@ export default class VimStatusBar {
     node.removeEventListener("blur", this.inputBlur);
   }
 
-  showNotification(text) {
+  showNotification(text: string | Node) {
     const sp = document.createElement("span");
     this.setInnerHtml_(sp, text);
     this.notifNode.textContent = sp.textContent;
@@ -178,7 +251,7 @@ export default class VimStatusBar {
     }, 5000);
   }
 
-  setInnerHtml_(element, htmlContents) {
+  setInnerHtml_(element: HTMLElement, htmlContents?: Node | string | null) {
     // Clear out previous contents first.
     while (element.childNodes.length) {
       element.removeChild(element.childNodes[0]);
@@ -186,10 +259,11 @@ export default class VimStatusBar {
     if (!htmlContents) {
       return;
     }
-    if (this.sanitizer) {
-      element.appendChild(this.sanitizer(htmlContents));
-    } else {
-      element.appendChild(htmlContents);
+    if (typeof htmlContents === "string") {
+      element.appendChild(document.createTextNode(htmlContents));
+      return;
     }
+    const node = this.sanitizer ? this.sanitizer(htmlContents) : htmlContents;
+    element.appendChild(node);
   }
 }
