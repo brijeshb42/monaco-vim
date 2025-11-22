@@ -51,7 +51,7 @@
     "rimraf": "^6.0.1",
     "tsdown": "^0.16.6",
     "typescript": "^5.6.3",
-    "vite": "^5.4.11",
+    "vite": "^7.0.0",
     "vite-plugin-monaco-editor": "^1.1.0"
   },
   "packageManager": "pnpm@10.23.0"
