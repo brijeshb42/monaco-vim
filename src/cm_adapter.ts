@@ -969,7 +969,11 @@ class CMAdapter {
     }
 
     return {
-      to: toCmPos(res[1].getStartPosition()),
+      to: toCmPos(
+        res[0].containsPosition(mPos)
+          ? res[1].getStartPosition()
+          : res[0].getStartPosition()
+      ),
     };
   }
 
