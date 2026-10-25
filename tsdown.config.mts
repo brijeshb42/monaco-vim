@@ -11,8 +11,8 @@ const shared = {
 
 const externalModules = [
   "monaco-editor",
-  "monaco-editor/esm/vs/editor/editor.api",
-  "monaco-editor/esm/vs/editor/common/commands/shiftCommand",
+  "monaco-editor/editor/editor.api",
+  "monaco-editor/editor/common/commands/shiftCommand",
 ];
 
 export default defineConfig([
@@ -46,13 +46,13 @@ export default defineConfig([
     dts: false,
     external: [
       "monaco-editor",
-      "monaco-editor/esm/vs/editor/editor.api",
+      "monaco-editor/editor/editor.api",
     ],
-    noExternal: ["monaco-editor/esm/vs/editor/common/commands/shiftCommand"],
+    noExternal: ["monaco-editor/editor/common/commands/shiftCommand"],
     outExtensions: () => ({ js: ".js" }),
     outputOptions: {
       globals: {
-        "monaco-editor/esm/vs/editor/editor.api": "monaco",
+        "monaco-editor/editor/editor.api": "monaco",
         "monaco-editor": "monaco",
       },
     },
