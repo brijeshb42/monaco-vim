@@ -3437,7 +3437,7 @@ var Vim = function () {
       }
     },
     toggleOverwrite: function (cm) {
-      if (!cm.state.overwrite) {
+      if (!cm.replaceMode) {
         cm.toggleOverwrite(true);
         cm.setOption("keyMap", "vim-replace");
         CodeMirror.signal(cm, "vim-mode-change", { mode: "replace" });
@@ -6929,7 +6929,7 @@ var Vim = function () {
             lastChange.maybeReset = false;
           }
           if (text) {
-            if (cm.state.overwrite && !/\n/.test(text)) {
+            if (cm.replaceMode && !/\n/.test(text)) {
               lastChange.changes.push([text]);
             } else {
               lastChange.changes.push(text);
