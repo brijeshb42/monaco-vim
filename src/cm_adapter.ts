@@ -186,13 +186,22 @@ class Marker {
   }
 }
 
+const domKeyNames = {
+  ArrowLeft: "LeftArrow",
+  ArrowRight: "RightArrow",
+  ArrowUp: "UpArrow",
+  ArrowDown: "DownArrow",
+  Control: "Ctrl",
+  " ": "Space",
+};
+
 function monacoToCmKey(e, skip = false) {
   let addQuotes = true;
   let keyName = KeyCode[e.keyCode];
 
   if (e.key) {
-    keyName = e.key;
-    addQuotes = false;
+    keyName = domKeyNames[e.key] ?? e.key;
+    addQuotes = e.key.length === 1 && e.key !== " ";
   }
 
   let key = keyName;
@@ -369,17 +378,45 @@ class CMAdapter {
     this.disposables.push(
       this.editor.onDidChangeCursorPosition(this.handleCursorChange),
       this.editor.onDidChangeModelContent(this.handleChange),
-      this.editor.onKeyDown(this.handleKeyDown),
     );
+
+    const editorDomNode = this.editor.getDomNode();
+    if (editorDomNode) {
+      const handleDomKeyDown = (browserEvent) => {
+        this.handleKeyDown({
+          browserEvent,
+          target: browserEvent.target,
+          ctrlKey: browserEvent.ctrlKey,
+          shiftKey: browserEvent.shiftKey,
+          altKey: browserEvent.altKey,
+          metaKey: browserEvent.metaKey,
+          key: browserEvent.key,
+          keyCode:
+            KeyCode[browserEvent.code] ??
+            KeyCode[browserEvent.key] ??
+            KeyCode.Unknown,
+          preventDefault: () => browserEvent.preventDefault(),
+          stopPropagation: () => browserEvent.stopPropagation(),
+        });
+      };
+
+      editorDomNode.addEventListener("keydown", handleDomKeyDown, true);
+      this.disposables.push({
+        dispose: () =>
+          editorDomNode.removeEventListener("keydown", handleDomKeyDown, true),
+      });
+    } else {
+      this.disposables.push(this.editor.onKeyDown(this.handleKeyDown));
+    }
   }
 
   handleKeyDown = (e) => {
-    // Allow previously registered keydown listeners to handle the event and
-    // prevent this extension from also handling it.
-    if (e.browserEvent.defaultPrevented & (e.keyCode !== KeyCode.Escape)) {
+    if (
+      e.browserEvent.isComposing ||
+      (e.browserEvent.defaultPrevented && e.keyCode !== KeyCode.Escape)
+    ) {
       return;
     }
-
     if (!this.attached) {
       return;
     }
